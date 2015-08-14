@@ -7,6 +7,7 @@ class Einstellung_Parser
     @datei = File.new pfad, "r"
     
     @datei.each {|e|
+      #zeilenumbruch vom String entfernen
       e.chomp!
       #kommentar ignorieren
       if !e.start_with? '#'
