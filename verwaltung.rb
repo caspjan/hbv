@@ -87,11 +87,48 @@ class Verwaltung
   def strip_cols hbs
     #unnötige spalten des mysql resultats loswerden
     hbs.collect { |hb|
-      hb.titel.map! { |t| t[2]}
-      hb.sprecher.map! { |s| s[2]}
-      hb.autor.map! { |a| a[2]}
-      hb.pfad.map! { |p| p[2]}
+      hb.titel.map! {|t| t[2]}
+      hb.sprecher.map! {|s| s[2]}
+      hb.autor.map! {|a| a[2]}
+      hb.pfad.map! {|p| p[2]}
     }
     return hbs
+  end
+  
+  def gibt_titel? titel
+    result = @con.query "SELECT * FROM titel WHERE titel='" + titel + "';"
+    id = -1
+    result.each_hash {|e| id = e['id']}
+    if id == -1
+        return false
+    else
+      return id
+    end
+  end
+  
+  def gibt_autor? autor
+    result = @con.query "SELECT * FROM autor WHERE autor='" + autor + "';"
+    id = -1
+    result.each_hash {|e| id = e['id']}
+    if id == -1
+        return false
+    else
+      return id
+    end
+  end
+    
+  def gibt_sprecher? sprecher
+    result = @con.query "SELECT * FROM sprecher WHERE sprecher='" + sprecher + "';"
+    id = -1
+    result.each_hash {|e| id = e['id']}
+    if id == -1
+        return false
+    else
+      return id
+    end
+  end
+  
+  def hoerbuch_einfuegen hb
+    
   end
 end
