@@ -129,6 +129,40 @@ class Verwaltung
   end
   
   def hoerbuch_einfuegen hb
-    
+    t = gibt_titel? hb.titel
+    a = gibt_autor? hb.autor
+    s = gibt_sprecher? hb.sprecher
+    #id des neuen hoerbuchs bestimmen
+    id = calc_next_id "hoerbuecher"
+    #titel, autor und sprecher anlegen, sofern es sie noch nich gibt
+    if !t
+      pst = @con.prepare 'INSERT INTO titel(hoerbuch, titel) VALUES(?, ?)'
+      pst.execute id, hb.titel
+      t = calc_next_id 'titel'
+    end
+    if !a
+      pst = @con.prepare 'INSERT INTO autor(hoerbuch, autor) VALUES(?, ?)'
+      pst.execute id, hb.autor
+      a = calc_next_id 'autor'
+    end
+    if !s
+      pst = @con.prepare 'INSERT INTO sprecher(hoerbuch, sprecher) VALUES(?, ?)'
+      pst.execute id, hb.sprecher
+      s = calc_next_id 'sprecher'
+    end
+    #pfad auf jeden fall neu einfügen
+    pst = @con.prepare 'INSERT INTO pfad(hoerbuch, pfad) VALUES(?, ?)'
+    pst.execute id, hb.pfad
+    p = calc_next_id 'pfad'
+    #hoerbuch schreiben
+    pst = @con.prepare 'INSERT INTO hoerbuecher(autor, titel, sprecher, pfad) VALUES(?, ?, ?, ?)'
+    pst.execute a, t, s, p
+  end
+  
+  def calc_next_id tabelle
+    res = @con.query 'SELECT COUNT(*) FROM ' + tabelle + ';'
+    id = 0
+    res.each {|e| id = e[0].to_i + 1}
+    return id
   end
 end

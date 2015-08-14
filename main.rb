@@ -3,4 +3,4 @@ require_relative 'verwaltung'
 require_relative 'einstellung_parser'
 
 verw = Verwaltung.new
-puts verw.gibt_sprecher? 'Lina Sprecher'
+verw.hoerbuch_einfuegen Hoerbuch.new 0, 'der titel', 'Jan', '/home/jan/ttel', 'Jan Sprecher'
