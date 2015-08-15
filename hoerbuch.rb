@@ -5,7 +5,7 @@ class Hoerbuch
   attr_accessor:sprecher
   attr_accessor:id
   
-  def initialize id, titel, autor, pfad, sprecher
+  def initialize id, titel, autor, sprecher, pfad
     @id = id
     @titel = titel
     @autor = autor
@@ -14,6 +14,6 @@ class Hoerbuch
   end
   
   def to_s
-    return "ID: " + @id, "Titel: " + @titel.to_s, "Autor: " + @autor.to_s, "Sprecher: " + @sprecher.to_s, "Pfad: " + @pfad.to_s
+    return "ID: " + @id.to_s, "Titel: " + @titel.to_s, "Autor: " + @autor.to_s, "Sprecher: " + @sprecher.to_s, "Pfad: " + @pfad.to_s
   end
 end
