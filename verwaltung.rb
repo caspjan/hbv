@@ -1,5 +1,6 @@
 require 'mysql'
 require_relative 'einstellung_parser'
+require_relative 'hoerbuch'
 
 class Verwaltung
   def initialize
