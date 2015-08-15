@@ -9,23 +9,123 @@ class Verwaltung
     @con = Mysql.new @einst.host, @einst.user, @einst.passwd, @einst.db
   end
   
+  def suche_sprecher sprecher
+    hbs = Array.new
+    #Aus der Tabelle sprecher den Sprecher suchen und das resultat in array speichern
+    sprecher = @con.query "SELECT * FROM sprecher WHERE sprecher LIKE '%" + sprecher + "%';"
+    #über das Array iterieren und in der tabelle sprechers die ids der hoerbucher rausholen, zu denen die sprecher gehören
+    sprecher.each_hash {|e|
+      #Die Hoerbuecher zu den Sprechern bestimmen
+      sprecher_zw = @con.query "SELECT * FROM sprechers WHERE sprecher=" + e['id'] + ";"
+      #über die sprecher iterieren und die hoerbuch id bestimmen
+      sprecher_zw.each_hash {|f|
+        hoerbuecher = @con.query "SELECT * FROM hoerbuecher WHERE id=" + f['hoerbuch'] + ";"
+        #über die hoerbuecher iterieren und den rest bestimmen
+        hoerbuecher.each_hash {|g|
+          #in der zwischentabelle für autoren nach der id des Hoerbuchs suchen
+          autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + g['id'] + ";"
+          #über die autoren iterieren und den namen in array Speichern
+          autor = Array.new
+          autoren.each_hash {|h|
+            autor_res = @con.query "SELECT * FROM autor WHERE id=" + h['autor'] + ";"
+            #autoren in array speichern
+            autor_res.each {|i| autor << i}
+          }
+          #in der zwischentabelle für sprecher nach der id des Hoerbuchs suchen
+          sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + g['id'] + ";"
+          sprecher = Array.new
+          sprechers.each_hash {|h|
+            sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + h['sprecher'] + ";"
+            #sprecher in array speichern
+            sprecher_res.each {|i| sprecher << i}
+          }
+          titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
+          titel = Array.new
+          titel_res.each {|i| titel << i}
+          pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
+          pfad = Array.new
+          pfad_res.each {|i| pfad << i}
+          hb = Hoerbuch.new g['id'], titel, autor, pfad, sprecher
+          hbs << hb
+        }
+      }
+    }
+    return strip_cols hbs
+  end
+  
+  def suche_autor autor
+    hbs = Array.new
+    #Aus der Tabelle sprecher den Autor suchen und das resultat in array speichern
+    autoren = @con.query "SELECT * FROM autor WHERE autor LIKE '%" + autor + "%';"
+    #über das Array iterieren und in der tabelle autoren die ids der hoerbucher rausholen, zu denen die autoren gehören
+    autoren.each_hash {|e|
+      #Die Hoerbuecher zu den Autoren bestimmen
+      autoren_zw = @con.query "SELECT * FROM autoren WHERE autor=" + e['id'] + ";"
+      #über die sprecher iterieren und die hoerbuch id bestimmen
+      autoren_zw.each_hash {|f|
+        hoerbuecher = @con.query "SELECT * FROM hoerbuecher WHERE id=" + f['hoerbuch'] + ";"
+        #über die hoerbuecher iterieren und den rest bestimmen
+        hoerbuecher.each_hash {|g|
+          #in der zwischentabelle für autoren nach der id des Hoerbuchs suchen
+          autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + g['id'] + ";"
+          #über die autoren iterieren und den namen in array Speichern
+          autor = Array.new
+          autoren.each_hash {|h|
+            autor_res = @con.query "SELECT * FROM autor WHERE id=" + h['autor'] + ";"
+            #autoren in array speichern
+            autor_res.each {|i| autor << i}
+          }
+          #in der zwischentabelle für sprecher nach der id des Hoerbuchs suchen
+          sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + g['id'] + ";"
+          sprecher = Array.new
+          sprechers.each_hash {|h|
+            sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + h['sprecher'] + ";"
+            #sprecher in array speichern
+            sprecher_res.each {|i| sprecher << i}
+          }
+          titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
+          titel = Array.new
+          titel_res.each {|i| titel << i}
+          pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
+          pfad = Array.new
+          pfad_res.each {|i| pfad << i}
+          hb = Hoerbuch.new g['id'], titel, autor, pfad, sprecher
+          hbs << hb
+        }
+      }
+    }
+    return strip_cols hbs
+  end
+  
   def suche_titel titel
     hbs = Array.new
-    #Daten aus Datenbank holen
+    #titel in der tabelle titel suchen
     result = @con.query "SELECT * FROM titel WHERE titel LIKE '%" + titel + "%';"
+    #über die titel iterieren
     result.each_hash {|row|
-      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE titel=" + row['hoerbuch'] + ";"
+      #alle hörbücher mit dem titel suchen
+      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE titel=" + row['id'] + ";"
       hoerbuch_res.each_hash {|f|
-        titel_res = @con.query "SELECT * FROM titel WHERE hoerbuch=" + f['titel'] + ";"
+        titel_res = @con.query "SELECT * FROM titel WHERE id=" + f['titel'] + ";"
         titel = Array.new
         titel_res.each {|e| titel << e}
-        autor_res = @con.query "SELECT * FROM autor WHERE hoerbuch=" + f['autor'] + ";"
+        #in der zwischentabelle nach allen autoren mit dem hoerbuch suchen
+        autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + f['id'] + ";"
         autor = Array.new
-        autor_res.each {|e| autor << e}
-        sprecher_res = @con.query "SELECT * FROM sprecher WHERE hoerbuch=" + f['sprecher'] + ";"
+        autoren.each_hash {|e|
+          #in der tabelle autor nach den autoren mit der id suchen
+          autor_res = @con.query "SELECT * FROM autor WHERE id=" + e['autor'] + ";"
+          autor_res.each {|g| autor << g}
+        }
+        #in der zwischentabelle nach allen sprechern mit dem hoerbuch suchen
+        sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + f['id'] + ";"
         sprecher = Array.new
-        sprecher_res.each {|e| sprecher << e}
-        pfad_res = @con.query "SELECT * FROM pfad WHERE hoerbuch=" + f['pfad'] + ";"
+        sprechers.each_hash {|e|
+          #in der tabelle autor nach den autoren mit der id suchen
+          sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + e['sprecher'] + ";"
+          sprecher_res.each {|g| sprecher << g}
+        }
+        pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + f['pfad'] + ";"
         pfad = Array.new
         pfad_res.each {|e| pfad << e}
         hb = Hoerbuch.new row['id'], titel, autor, pfad, sprecher
@@ -35,65 +135,25 @@ class Verwaltung
     return strip_cols hbs
   end
   
-  def suche_autor autor
-    hbs = Array.new
-    result = @con.query "SELECT * FROM autor WHERE autor LIKE '%" + autor + "%';"
-    result.each_hash {|row|
-      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE autor=" + row['hoerbuch'] + ";"
-      hoerbuch_res.each_hash {|f|
-        autor_res = @con.query "SELECT * FROM autor WHERE hoerbuch=" + f['autor'] + ";"
-        autor = Array.new
-        autor_res.each {|e| autor << e}
-        titel_res = @con.query "SELECT * FROM titel WHERE hoerbuch=" + f['titel'] + ";"
-        titel = Array.new
-        titel_res.each {|e| titel << e}
-        sprecher_res = @con.query "SELECT * FROM sprecher WHERE hoerbuch=" + f['sprecher'] + ";"
-        sprecher = Array.new
-        sprecher_res.each {|e| sprecher << e}
-        pfad_res = @con.query "SELECT * FROM pfad WHERE hoerbuch=" + f['pfad'] + ";"
-        pfad = Array.new
-        pfad_res.each {|e| pfad << e}
-        hb = Hoerbuch.new f['id'], titel, autor, pfad, sprecher
-        hbs << hb
-      }
-    }
-    return strip_cols hbs
-  end
-  
-  def suche_sprecher sprecher
-    hbs = Array.new
-    result = @con.query "SELECT * FROM sprecher WHERE sprecher LIKE '%" + sprecher + "%';"
-    result.each_hash {|row|
-      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE sprecher=" + row['hoerbuch'] + ";"
-      hoerbuch_res.each_hash {|f|
-        autor_res = @con.query "SELECT * FROM autor WHERE hoerbuch=" + f['autor'] + ";"
-        autor = Array.new
-        autor_res.each {|e| autor << e}
-        titel_res = @con.query "SELECT * FROM titel WHERE hoerbuch=" + f['titel'] + ";"
-        titel = Array.new
-        titel_res.each {|e| titel << e}
-        sprecher_res = @con.query "SELECT * FROM sprecher WHERE hoerbuch=" + f['sprecher'] + ";"
-        sprecher = Array.new
-        sprecher_res.each {|e| sprecher << e}
-        pfad_res = @con.query "SELECT * FROM pfad WHERE hoerbuch=" + f['pfad'] + ";"
-        pfad = Array.new
-        pfad_res.each {|e| pfad << e}
-        hb = Hoerbuch.new f['id'], titel, autor, pfad, sprecher
-        hbs << hb
-      }
-    }
-    return  strip_cols hbs
-  end
-  
   def strip_cols hbs
     #unnötige spalten des mysql resultats loswerden
     hbs.collect { |hb|
-      hb.titel.map! {|t| t[2]}
-      hb.sprecher.map! {|s| s[2]}
-      hb.autor.map! {|a| a[2]}
-      hb.pfad.map! {|p| p[2]}
+      hb.titel.map! {|t| t[1]}
+      hb.sprecher.map! {|s| s[1]}
+      hb.autor.map! {|a| a[1]}
+      hb.pfad.map! {|p| p[1]}
     }
     return hbs
+  end
+  
+  def clear_tables
+    @con.query 'TRUNCATE hoerbuecher'
+    @con.query 'TRUNCATE titel'
+    @con.query 'TRUNCATE autor'
+    @con.query 'TRUNCATE autoren'
+    @con.query 'TRUNCATE pfad'
+    @con.query 'TRUNCATE sprecher'
+    @con.query 'TRUNCATE sprechers'
   end
   
   def gibt_titel? titel
@@ -130,34 +190,59 @@ class Verwaltung
   end
   
   def hoerbuch_einfuegen hb
-    t = gibt_titel? hb.titel
-    a = gibt_autor? hb.autor
-    s = gibt_sprecher? hb.sprecher
     #id des neuen hoerbuchs bestimmen
-    id = calc_next_id "hoerbuecher"
-    #titel, autor und sprecher anlegen, sofern es sie noch nich gibt
-    if !t
-      pst = @con.prepare 'INSERT INTO titel(hoerbuch, titel) VALUES(?, ?)'
-      pst.execute id, hb.titel
-      t = calc_next_id 'titel'
+    new_id = calc_next_id "hoerbuecher"
+    #über die autoren des hörbuchs iterieren
+    autor_ids = Array.new
+    hb.autor.each {|e|
+      #für jeden autor schauen, ob er schon existiert
+      if !gibt_autor? e
+        pst = @con.prepare 'INSERT INTO autor(autor) VALUES(?)'
+        pst.execute e
+        autor_ids << calc_next_id('autor') - 1
+      else
+        autor_ids << gibt_autor?(e)
+      end
+    }
+    #verknüpfung für jeden autor in autor_ids in der zwischentabelle erstellen
+    pst = @con.prepare 'INSERT INTO autoren(hoerbuch, autor) VALUES(?, ?)'
+    autor_ids.each {|e|
+      pst.execute new_id, e
+    }
+    
+    #über die sprecher des hörbuchs iterieren
+    sprecher_ids = Array.new
+    hb.sprecher.each {|e|
+      #für jeden sprecher schauen, ob er schon existiert
+      if !gibt_sprecher? e
+        pst = @con.prepare 'INSERT INTO sprecher(sprecher) VALUES(?)'
+        pst.execute e
+        sprecher_ids << calc_next_id('sprecher') - 1
+      else
+        sprecher_ids << gibt_sprecher?(e)
+      end
+    }
+    #verknüpfung für jeden sprecher in sprecher_ids in der zwischentabelle erstellen
+    pst = @con.prepare 'INSERT INTO sprechers(hoerbuch, sprecher) VALUES(?, ?)'
+    sprecher_ids.each {|e|
+      pst.execute new_id, e
+    }
+    
+    #wenn der titel noch nicht existiert, neu anlegen
+    if !gibt_titel? hb.titel
+      pst = @con.prepare 'INSERT INTO titel(titel) VALUES(?)'
+      pst.execute hb.titel
     end
-    if !a
-      pst = @con.prepare 'INSERT INTO autor(hoerbuch, autor) VALUES(?, ?)'
-      pst.execute id, hb.autor
-      a = calc_next_id 'autor'
-    end
-    if !s
-      pst = @con.prepare 'INSERT INTO sprecher(hoerbuch, sprecher) VALUES(?, ?)'
-      pst.execute id, hb.sprecher
-      s = calc_next_id 'sprecher'
-    end
-    #pfad auf jeden fall neu einfügen
-    pst = @con.prepare 'INSERT INTO pfad(hoerbuch, pfad) VALUES(?, ?)'
-    pst.execute id, hb.pfad
-    p = calc_next_id 'pfad'
-    #hoerbuch schreiben
-    pst = @con.prepare 'INSERT INTO hoerbuecher(autor, titel, sprecher, pfad) VALUES(?, ?, ?, ?)'
-    pst.execute a, t, s, p
+    titel_id = gibt_titel? hb.titel
+    
+    #pfad neu anlegen
+    pst = @con.prepare 'INSERT INTO pfad(pfad) VALUES(?)'
+    pst.execute hb.pfad
+    pfad_id = calc_next_id('pfad') - 1
+    
+    #hörbuch anlegen
+    pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad) VALUES(?, ?)'
+    pst.execute titel_id, pfad_id
   end
   
   def calc_next_id tabelle
