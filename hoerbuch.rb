@@ -8,11 +8,9 @@ class Hoerbuch
   def initialize id, titel, autor, pfad, sprecher
     @id = id
     @titel = titel
-    @autor = Array.new
-    @autor << autor
+    @autor = autor
     @pfad = pfad
-    @sprecher = Array.new
-    @sprecher << sprecher
+    @sprecher = sprecher
   end
   
   def to_s
