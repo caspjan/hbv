@@ -9,6 +9,17 @@ class Verwaltung
     @con = Mysql.new @einst.host, @einst.user, @einst.passwd, @einst.db
   end
   
+  def full_dump
+    hbs = Array.new
+    calc_next_id('hoerbuecher').downto(0) {|e|
+      hb = get_hb e.to_s
+      if !hb.nil?
+        hbs << hb
+      end
+    }
+    return hbs
+  end
+  
   def get_hb id
     hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + id + ';'
     pfad = ""
@@ -20,10 +31,10 @@ class Verwaltung
       gibt = true
       #titel holen
       titel_res = @con.query 'SELECT * FROM titel WHERE id=' + e['titel'] + ';'
-      titel_res.each {|f| titel = f}
+      titel_res.each_hash {|f| titel = f['titel']}
       #pfad holen
       pfad_res = @con.query 'SELECT * FROM pfad WHERE id=' + e['pfad'] + ';'
-      pfad_res.each {|f| pfad = f}
+      pfad_res.each_hash {|f| pfad = f['pfad']}
       #autoren aus zwischentabelle holen
       autoren_res = @con.query 'SELECT * FROM autoren WHERE hoerbuch=' + e['id'] + ';'
       autoren_res.each_hash {|f|
@@ -336,8 +347,6 @@ class Verwaltung
   
   def calc_next_id tabelle
     res = @con.query 'SHOW TABLE STATUS FROM hoerbuch;'
-    #res = @con.query 'SELECT Auto_increment FROM information_schema.tables WHERE TABLE_NAME=' + tabelle + ';'
-    #res = @con.query 'SELECT COUNT(*) FROM ' + tabelle + ';'
     id = 0
     res.each_hash {|e| id = e['Auto_increment'].to_i}
     return id

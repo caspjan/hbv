@@ -15,9 +15,15 @@ class Main
     o.bool '-f', '--force', "don't ask"
     o.string '-r', '--remove', '[id] remove audiobook from database'
     o.string '-id', '--get-by-id', '[id] get audiobook by id'
+    o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
     }
   
     verw = Verwaltung.new
+    
+    if @args[:fd]
+      res = verw.full_dump
+      res.each {|e| puts e.to_s }
+    end
     
     def sure?
       if @args[:force]
