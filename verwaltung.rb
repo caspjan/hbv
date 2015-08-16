@@ -346,7 +346,7 @@ class Verwaltung
   end
   
   def calc_next_id tabelle
-    res = @con.query 'SHOW TABLE STATUS FROM hoerbuch;'
+    res = @con.query 'SHOW TABLE STATUS FROM hoerbuch WHERE Name="' + tabelle + '";'
     id = 0
     res.each_hash {|e| id = e['Auto_increment'].to_i}
     return id
