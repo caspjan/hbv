@@ -21,6 +21,8 @@ class Einstellung_Parser
           @einst.user = f[1]
         when 'dbpasswd'
           @einst.passwd = f[1]
+        when 'format'
+          @einst.format = f[1]
         end
       end
       }
