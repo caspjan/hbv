@@ -75,7 +75,7 @@ class Verwaltung
           autoren.each_hash {|h|
             autor_res = @con.query "SELECT * FROM autor WHERE id=" + h['autor'] + ";"
             #autoren in array speichern
-            autor_res.each {|i| autor << i}
+            autor_res.each_hash {|i| autor << i['autor']}
           }
           #in der zwischentabelle für sprecher nach der id des Hoerbuchs suchen
           sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + g['id'] + ";"
@@ -83,20 +83,20 @@ class Verwaltung
           sprechers.each_hash {|h|
             sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + h['sprecher'] + ";"
             #sprecher in array speichern
-            sprecher_res.each {|i| sprecher << i}
+            sprecher_res.each_hash {|i| sprecher << i['sprecher']}
           }
           titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
-          titel = Array.new
-          titel_res.each {|i| titel << i}
+          titel = ""
+          titel_res.each_hash {|i| titel << i['titel']}
           pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
-          pfad = Array.new
-          pfad_res.each {|i| pfad << i}
-          hb = Hoerbuch.new g['id'], titel, autor, pfad, sprecher
+          pfad = ""
+          pfad_res.each_hash {|i| pfad << i['pfad']}
+          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad
           hbs << hb
         }
       }
     }
-    return strip_cols hbs
+    return hbs
   end
   
   def suche_autor autor
@@ -153,32 +153,32 @@ class Verwaltung
       hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE titel=" + row['id'] + ";"
       hoerbuch_res.each_hash {|f|
         titel_res = @con.query "SELECT * FROM titel WHERE id=" + f['titel'] + ";"
-        titel = Array.new
-        titel_res.each {|e| titel << e}
+        titel = ""
+        titel_res.each_hash {|e| titel << e['titel']}
         #in der zwischentabelle nach allen autoren mit dem hoerbuch suchen
         autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + f['id'] + ";"
         autor = Array.new
         autoren.each_hash {|e|
           #in der tabelle autor nach den autoren mit der id suchen
           autor_res = @con.query "SELECT * FROM autor WHERE id=" + e['autor'] + ";"
-          autor_res.each {|g| autor << g}
+          autor_res.each_hash {|g| autor << g['autor']}
         }
         #in der zwischentabelle nach allen sprechern mit dem hoerbuch suchen
         sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + f['id'] + ";"
         sprecher = Array.new
         sprechers.each_hash {|e|
-          #in der tabelle autor nach den autoren mit der id suchen
+          #in der tabelle sprecher nach den sprechern mit der id suchen
           sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + e['sprecher'] + ";"
-          sprecher_res.each {|g| sprecher << g}
+          sprecher_res.each_hash {|g| sprecher << g['sprecher']}
         }
         pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + f['pfad'] + ";"
-        pfad = Array.new
-        pfad_res.each {|e| pfad << e}
-        hb = Hoerbuch.new row['id'], titel, autor, pfad, sprecher
+        pfad = ""
+        pfad_res.each_hash {|e| pfad << e['pfad']}
+        hb = Hoerbuch.new row['id'], titel, autor, sprecher, pfad
         hbs << hb
       }
     }
-    return strip_cols hbs
+    return hbs
   end
   
   def strip_cols hbs
