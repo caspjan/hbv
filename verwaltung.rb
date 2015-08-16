@@ -3,9 +3,8 @@ require_relative 'einstellung_parser'
 require_relative 'hoerbuch'
 
 class Verwaltung
-  def initialize
-    einst_pars = Einstellung_Parser.new '/home/jan/Dokumente/Programmierzeug/Hoerbuch/hoerbuch.conf'
-    @einst = einst_pars.einst
+  def initialize einst
+    @einst = einst
     @con = Mysql.new @einst.host, @einst.user, @einst.passwd, @einst.db
   end
   
@@ -120,7 +119,7 @@ class Verwaltung
           autoren.each_hash {|h|
             autor_res = @con.query "SELECT * FROM autor WHERE id=" + h['autor'] + ";"
             #autoren in array speichern
-            autor_res.each {|i| autor << i}
+            autor_res.each_hash {|i| autor << i['autor']}
           }
           #in der zwischentabelle für sprecher nach der id des Hoerbuchs suchen
           sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + g['id'] + ";"
@@ -128,20 +127,20 @@ class Verwaltung
           sprechers.each_hash {|h|
             sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + h['sprecher'] + ";"
             #sprecher in array speichern
-            sprecher_res.each {|i| sprecher << i}
+            sprecher_res.each_hash {|i| sprecher << i['sprecher']}
           }
           titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
-          titel = Array.new
-          titel_res.each {|i| titel << i}
+          titel = ""
+          titel_res.each_hash {|i| titel << i['titel']}
           pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
-          pfad = Array.new
-          pfad_res.each {|i| pfad << i}
+          pfad = ""
+          pfad_res.each_hash {|i| pfad << i['pfad']}
           hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad
           hbs << hb
         }
       }
     }
-    return strip_cols hbs
+    return hbs
   end
   
   def suche_titel titel
