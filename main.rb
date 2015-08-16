@@ -7,13 +7,14 @@ class Main
     o.string '-a', '--author', 'the author to search for'
     o.string '-s', '--speaker', 'the speaker to search for'
     o.string '-t', '--title', 'the title to search for'
-    #o.string '-f', '--format', 'output format. Available variables: %id, %t (title), %a (author), %s (speaker), %p (path).'
     o.array '-i', '--insert', 'insert new audiobook into database; title,author,speaker,path (NO spaces)'
     o.on '-h', '--help', 'display this help' do
       puts o
     end
     o.bool '-cdb', '--clear-db', 'clear whole database'
     o.bool '-f', '--force', "don't ask"
+    o.string '-r', '--remove', '[id] remove audiobook from database'
+    o.string '-id', '--get-by-id', '[id] get audiobook by id'
     }
   
     verw = Verwaltung.new
@@ -25,6 +26,28 @@ class Main
       puts 'Are you sure? (Y/n)'
       r = STDIN.gets.chomp
       r.eql? 'Y' or r.eql? 'y'
+    end
+    
+    if @args[:remove]
+      id = @args[:remove]
+      res = verw.get_hb id
+      if !res.nil?
+        puts res.to_s
+        if sure?
+          verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil
+        end
+      else
+        puts "Nothing found."
+      end
+    end
+    
+    if @args[:id]
+      res = verw.get_hb @args[:id]
+      if !res.nil?
+        puts res.to_s
+      else
+        puts "Nothing found."
+      end
     end
     
     if @args[:author]

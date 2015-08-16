@@ -9,6 +9,42 @@ class Verwaltung
     @con = Mysql.new @einst.host, @einst.user, @einst.passwd, @einst.db
   end
   
+  def get_hb id
+    hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + id + ';'
+    pfad = ""
+    titel = ""
+    autor = Array.new
+    sprecher = Array.new
+    gibt = false
+    hb_res.each_hash {|e|
+      gibt = true
+      #titel holen
+      titel_res = @con.query 'SELECT * FROM titel WHERE id=' + e['titel'] + ';'
+      titel_res.each {|f| titel = f}
+      #pfad holen
+      pfad_res = @con.query 'SELECT * FROM pfad WHERE id=' + e['pfad'] + ';'
+      pfad_res.each {|f| pfad = f}
+      #autoren aus zwischentabelle holen
+      autoren_res = @con.query 'SELECT * FROM autoren WHERE hoerbuch=' + e['id'] + ';'
+      autoren_res.each_hash {|f|
+        autor_res = @con.query 'SELECT *FROM autor WHERE id=' + f['autor'] + ';'
+        autor_res.each_hash {|g| autor << g['autor'] }
+      }
+      #sprecher aus zwischentabelle holen
+      sprechers_res = @con.query 'SELECT * FROM sprechers WHERE hoerbuch=' + e['id'] + ';'
+      sprechers_res.each_hash {|f|
+        #sprecher aus sprecher tabelle holen
+        sprecher_res = @con.query 'SELECT * FROM sprecher WHERE id=' + f['sprecher'] + ';'
+        sprecher_res.each_hash {|g| sprecher << g['sprecher']}
+      }
+    }
+    if gibt
+      return Hoerbuch.new id, titel, autor, sprecher, pfad
+    else
+      return nil
+    end
+  end
+  
   def suche_sprecher sprecher
     hbs = Array.new
     #Aus der Tabelle sprecher den Sprecher suchen und das resultat in array speichern
@@ -89,7 +125,7 @@ class Verwaltung
           pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
           pfad = Array.new
           pfad_res.each {|i| pfad << i}
-          hb = Hoerbuch.new g['id'], titel, autor, pfad, sprecher
+          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad
           hbs << hb
         }
       }
@@ -199,7 +235,7 @@ class Verwaltung
       if !gibt_autor? e
         pst = @con.prepare 'INSERT INTO autor(autor) VALUES(?)'
         pst.execute e
-        autor_ids << calc_next_id('autor') - 1
+        autor_ids << gibt_autor?(e)
       else
         autor_ids << gibt_autor?(e)
       end
@@ -217,7 +253,7 @@ class Verwaltung
       if !gibt_sprecher? e
         pst = @con.prepare 'INSERT INTO sprecher(sprecher) VALUES(?)'
         pst.execute e
-        sprecher_ids << calc_next_id('sprecher') - 1
+        sprecher_ids << gibt_sprecher?(e)
       else
         sprecher_ids << gibt_sprecher?(e)
       end
@@ -245,10 +281,65 @@ class Verwaltung
     pst.execute titel_id, pfad_id
   end
   
+  def clean_autoren
+    #alle autoren einlesen
+    autoren = @con.query 'SELECT * FROM autor'
+    autoren.each_hash {|e|
+      kommt_vor = false
+      #überprüfen, ob die id des autors in der zwischentabelle steht
+      verkn = @con.query 'SELECT * FROM autoren WHERE autor=' + e['id'] + ';'
+      verkn.each {|f| kommt_vor = true}
+      #wenn nicht, loschen
+      if !kommt_vor
+        #autor löschen
+        @con.query 'DELETE FROM autor WHERE id=' + e['id'] + ';'
+      end
+    }
+  end
+  
+  def clean_sprecher
+    #alle sprecher einlesen
+    sprecher = @con.query 'SELECT * FROM sprecher'
+    sprecher.each_hash {|e|
+      kommt_vor = false
+      #überprüfen, ob die id des sprechers in der zwischentabelle steht
+      verkn = @con.query 'SELECT * FROM sprechers WHERE sprecher=' + e['id'] + ';'
+      verkn.each {|f| kommt_vor = true}
+      #wenn nicht, loschen
+      if !kommt_vor
+        #sprecher löschen
+        @con.query 'DELETE FROM sprecher WHERE id=' + e['id'] + ';'
+      end
+    }
+  end
+  
+  def hoerbuch_loeschen hb
+    #id des pfades holen und loeschen
+    hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + hb.id + ';'
+    hb_res.each_hash {|e|
+      #pfad loeschen
+      @con.query 'DELETE FROM pfad WHERE id=' + e['pfad'] + ';'
+      #titel loeschen
+      @con.query 'DELETE FROM titel WHERE id=' + e['titel'] + ';'
+      #verknüpfungen des autors aus zwischentabelle loeschen
+      @con.query 'DELETE FROM autoren WHERE hoerbuch=' + e['id'] + ';'
+      #verknüpfungen des sprechers aus zwischentabelle loeschen
+      @con.query 'DELETE FROM sprechers WHERE hoerbuch=' + e['id'] + ';'
+      #checken, ob es autoren ohne hoerbuch gibt
+      clean_autoren
+      #checken, ob es sprecher ohne hoerbuch gibt
+      clean_sprecher
+      #hoerbuch loeschen
+      @con.query 'DELETE FROM hoerbuecher WHERE id=' + hb.id + ';'
+    }
+  end
+  
   def calc_next_id tabelle
-    res = @con.query 'SELECT COUNT(*) FROM ' + tabelle + ';'
+    res = @con.query 'SHOW TABLE STATUS FROM hoerbuch;'
+    #res = @con.query 'SELECT Auto_increment FROM information_schema.tables WHERE TABLE_NAME=' + tabelle + ';'
+    #res = @con.query 'SELECT COUNT(*) FROM ' + tabelle + ';'
     id = 0
-    res.each {|e| id = e[0].to_i + 1}
+    res.each_hash {|e| id = e['Auto_increment'].to_i}
     return id
   end
 end
