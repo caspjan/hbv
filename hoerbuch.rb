@@ -12,8 +12,4 @@ class Hoerbuch
     @pfad = pfad
     @sprecher = sprecher
   end
-  
-  def to_s
-    return "ID: " + @id.to_s, "Titel: " + @titel.to_s, "Autor: " + @autor.to_s, "Sprecher: " + @sprecher.to_s, "Pfad: " + @pfad.to_s
-  end
 end

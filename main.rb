@@ -32,7 +32,6 @@ class Main
       puts "done."
     end
     
-    
     if @args[:fd]
       res = @verw.full_dump
       res.each {|e| @ausg.aus e }

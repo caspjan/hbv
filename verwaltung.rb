@@ -191,18 +191,7 @@ class Verwaltung
     }
     return hbs
   end
-  
-  def strip_cols hbs
-    #unnötige spalten des mysql resultats loswerden
-    hbs.collect { |hb|
-      hb.titel.map! {|t| t[1]}
-      hb.sprecher.map! {|s| s[1]}
-      hb.autor.map! {|a| a[1]}
-      hb.pfad.map! {|p| p[1]}
-    }
-    return hbs
-  end
-  
+    
   def clear_tables
     @con.query 'TRUNCATE hoerbuecher'
     @con.query 'TRUNCATE titel'
