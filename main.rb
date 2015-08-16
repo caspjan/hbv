@@ -24,8 +24,13 @@ class Main
     o.string '-r', '--remove', '[id] remove audiobook from database'
     o.string '-id', '--get-by-id', '[id] get audiobook by id'
     o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
+    o.bool '', '--init-db', 'create all needed tables'
     }
   
+    if @args[:'init-db']
+      @verw.init_db
+      puts "done."
+    end
     
     
     if @args[:fd]

@@ -6,7 +6,7 @@ class Ausgabe
   def aus hb 
     out = @format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
-    out.gsub! "%id", hb.id
+    out.gsub! "%id", hb.id.to_s
     out.gsub! "%t", hb.titel
     autoren = ""
     anz_autoren = hb.autor.length
