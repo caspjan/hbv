@@ -25,6 +25,8 @@ class Einstellung_Parser
           @einst.format = f[1]
         when 'datei_format'
           @einst.datei_format = f[1]
+        when 'datei_groesse'
+          @einst.datei_groesse = f[1]
         end
       end
       }

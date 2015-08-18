@@ -2,6 +2,7 @@ class Ausgabe
   def initialize einst
     @format = einst.format
     @d_format = einst.datei_format
+    @d_gr = einst.datei_groesse
   end
   
   def aus hb, dateien
@@ -57,6 +58,21 @@ class Ausgabe
         la << "s"
         
         d_out = @d_format.gsub "%n", "\n"
+        #dateigroesse konveriren
+        if @d_gr.eql? "KB"
+          d_out.gsub! "%s", (e.groesse.to_f / (10**3).to_f).round(2).to_s << " " + @d_gr
+        elsif @d_gr.eql? "MB"
+          d_out.gsub! "%s", (e.groesse.to_f / (10**6).to_f).round(2).to_s << " " + @d_gr
+        elsif @d_gr.eql? "GB"
+          d_out.gsub! "%s", (e.groesse.to_f / (10**9).to_f).round(2).to_s << " " + @d_gr
+        elsif @d_gr.eql? "KiB"
+          d_out.gsub! "%s", (e.groesse.to_f / (2**10).to_f).round(2).to_s << " " + @d_gr
+        elsif @d_gr.eql? "MiB"
+          d_out.gsub! "%s", (e.groesse.to_f / (2**20).to_f).round(2).to_s << " " + @d_gr
+        elsif @d_gr.eql? "GiB"
+          d_out.gsub! "%s", (e.groesse.to_f / (2**30).to_f).round(2).to_s << " " + @d_gr
+        end
+        #restliche variablen ersetzen
         d_out.gsub! "%tb", "\t"
         d_out.gsub! "%p", e.pfad
         d_out.gsub! "%t", e.titel
