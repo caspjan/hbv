@@ -208,39 +208,6 @@ class Verwaltung
     @con.query 'TRUNCATE sprechers'
   end
   
-  def gibt_titel? titel
-    result = @con.query "SELECT * FROM titel WHERE titel='" + titel + "';"
-    id = -1
-    result.each_hash {|e| id = e['id']}
-    if id == -1
-        return false
-    else
-      return id
-    end
-  end
-  
-  def gibt_autor? autor
-    result = @con.query "SELECT * FROM autor WHERE autor='" + autor + "';"
-    id = -1
-    result.each_hash {|e| id = e['id']}
-    if id == -1
-        return false
-    else
-      return id
-    end
-  end
-    
-  def gibt_sprecher? sprecher
-    result = @con.query "SELECT * FROM sprecher WHERE sprecher='" + sprecher + "';"
-    id = -1
-    result.each_hash {|e| id = e['id']}
-    if id == -1
-        return false
-    else
-      return id
-    end
-  end
-  
   def gibt_wert? tabelle, spalte, wert
     result = @con.query "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
     id = -1
@@ -259,12 +226,12 @@ class Verwaltung
     autor_ids = Array.new
     hb.autor.each {|e|
       #für jeden autor schauen, ob er schon existiert
-      if !gibt_autor? e
+      if !gibt_wert? "autor", "autor", e
         pst = @con.prepare 'INSERT INTO autor(autor) VALUES(?)'
         pst.execute e
-        autor_ids << gibt_autor?(e)
+        autor_ids << gibt_wert?("autor", "autor", e)
       else
-        autor_ids << gibt_autor?(e)
+        autor_ids << gibt_wert?("autor", "autor", e)
       end
     }
     #verknüpfung für jeden autor in autor_ids in der zwischentabelle erstellen
@@ -277,12 +244,12 @@ class Verwaltung
     sprecher_ids = Array.new
     hb.sprecher.each {|e|
       #für jeden sprecher schauen, ob er schon existiert
-      if !gibt_sprecher? e
+      if !gibt_wert? "sprecher", "sprecher", e
         pst = @con.prepare 'INSERT INTO sprecher(sprecher) VALUES(?)'
         pst.execute e
-        sprecher_ids << gibt_sprecher?(e)
+        sprecher_ids << gibt_wert?("sprecher", "sprecher", e)
       else
-        sprecher_ids << gibt_sprecher?(e)
+        sprecher_ids << gibt_wert?("sprecher", "sprecher", e)
       end
     }
     #verknüpfung für jeden sprecher in sprecher_ids in der zwischentabelle erstellen
@@ -292,11 +259,11 @@ class Verwaltung
     }
     
     #wenn der titel noch nicht existiert, neu anlegen
-    if !gibt_titel? hb.titel
+    if !gibt_wert? "titel", "titel", hb.titel
       pst = @con.prepare 'INSERT INTO titel(titel) VALUES(?)'
       pst.execute hb.titel
     end
-    titel_id = gibt_titel? hb.titel
+    titel_id = gibt_wert? "titel", "titel", hb.titel
     
     #pfad neu anlegen
     pst = @con.prepare 'INSERT INTO pfad(pfad) VALUES(?)'
