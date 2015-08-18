@@ -4,6 +4,7 @@ class Einstellung
   attr_accessor :passwd
   attr_accessor :db
   attr_accessor :format
+  attr_accessor :datei_format
   
   def to_s
     return 'dbhost=' + @host, 'dbuser=' + @user, 'dbpasswd=' + @passwd, 'dbname=' + @db

@@ -25,18 +25,11 @@ class Main
     o.string '-r', '--remove', '[id] remove audiobook from database'
     o.string '-id', '--get-by-id', '[id] get audiobook by id'
     o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
-    o.bool '', '--init-db', 'create all needed tables'
+    o.bool '--files', 'print all files of the audiobook'
+    o.bool '--init-db', 'create all needed tables'
     }
   
-    if @args[:'init-db']
-      @verw.init_db
-      puts "done."
-    end
     
-    if @args[:fd]
-      res = @verw.full_dump
-      res.each {|e| @ausg.aus e }
-    end
     
     def sure?
       if @args[:force]
@@ -47,11 +40,29 @@ class Main
       r.eql? 'Y' or r.eql? 'y'
     end
     
+    def files? hb_id
+      if @args[:files]
+        return @verw.get_dateien hb_id
+      else
+        return nil
+      end
+    end
+    
+    if @args[:'init-db']
+      @verw.init_db
+      puts "done."
+    end
+    
+    if @args[:fd]
+      res = @verw.full_dump
+      res.each {|e| @ausg.aus e, files?(e.id) }
+    end
+    
     if @args[:remove]
       id = @args[:remove]
       res = @verw.get_hb id
       if !res.nil?
-        @ausg.aus res
+        @ausg.aus res, files?(res.id.to_i)
         if sure?
           @verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil
         end
@@ -63,7 +74,7 @@ class Main
     if @args[:id]
       res = @verw.get_hb @args[:id]
       if !res.nil?
-        @ausg.aus res
+        @ausg.aus res, files?(@args[:id])
       else
         puts "Nothing found."
       end
@@ -71,22 +82,22 @@ class Main
     
     if @args[:author]
       res = @verw.suche_autor @args[:author]
-      res.each {|e| @ausg.aus e }
+      res.each {|e| @ausg.aus e, files?(e.id) }
     end
     
     if @args[:title]
       res = @verw.suche_titel @args[:title]
-      res.each {|e| @ausg.aus e}
+      res.each {|e| @ausg.aus e, files?(e.id)}
     end
     
     if @args[:speaker]
       res = @verw.suche_sprecher @args[:speaker]
-      res.each {|e| @ausg.aus e }
+      res.each {|e| @ausg.aus e, files?(e.id) }
     end
     
     if @args[:rating]
       res = @verw.suche_bewertung @args[:rating]
-      res.each {|e| @ausg.aus e }
+      res.each {|e| @ausg.aus e, files?(e.id) }
     end
     
     

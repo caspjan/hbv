@@ -1,6 +1,7 @@
 require 'mysql'
 require_relative 'einstellung_parser'
 require_relative 'hoerbuch'
+require_relative 'hoerbuch_datei'
 
 class Verwaltung
   def initialize einst
@@ -74,6 +75,37 @@ class Verwaltung
     else
       return nil
     end
+  end
+  
+  def get_dateien hb_id
+    dateien = Array.new
+    #alle ids aus zwischentabelle holen
+    res = @con.query 'SELECT * FROM dateien WHERE hoerbuch=' + hb_id.to_s + ';'
+    res.each_hash {|e|
+      datei = @con.query 'SELECT * FROM datei WHERE id=' + e['datei'] + ';'
+      hbd = Hoerbuch_Datei.new
+      datei.each_hash {|f|
+        hbd.pfad = f['pfad']
+        hbd.titel = f['titel']
+        hbd.laenge = f['laenge']
+        hbd.groesse = f['groesse']
+        hbd.nummer = f['nummer']
+        #interpret holen
+        interpret_res = @con.query 'SELECT * FROM datei_interpret WHERE id=' + f['interpret'] + ';'
+        interpret_res.each_hash {|g| hbd.interpret = g['interpret']}
+        #album holen
+        album_res = @con.query 'SELECT * FROM datei_album WHERE id=' + f['album'] + ';'
+        album_res.each_hash {|g| hbd.album = g['album']}
+        #jahr holen
+        jahr_res = @con.query 'SELECT * FROM datei_jahr WHERE id=' + f['jahr'] + ';'
+        jahr_res.each_hash {|g| hbd.jahr = g['jahr']}
+        #genre holens
+        genre_res = @con.query 'SELECT * FROM datei_genre WHERE id=' + f['genre'] + ';'
+        genre_res.each_hash {|g| hbd.genre = g['genre']}
+        dateien << hbd
+      }
+    }
+    return dateien
   end
   
   def suche_bewertung bw

@@ -23,6 +23,8 @@ class Einstellung_Parser
           @einst.passwd = f[1]
         when 'format'
           @einst.format = f[1]
+        when 'datei_format'
+          @einst.datei_format = f[1]
         end
       end
       }
