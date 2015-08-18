@@ -193,6 +193,12 @@ class Verwaltung
   end
     
   def clear_tables
+    @con.query 'TRUNCATE datei'
+    @con.query 'TRUNCATE dateien'
+    @con.query 'TRUNCATE datei_interpret'
+    @con.query 'TRUNCATE datei_jahr'
+    @con.query 'TRUNCATE datei_genre'
+    @con.query 'TRUNCATE datei_album'
     @con.query 'TRUNCATE hoerbuecher'
     @con.query 'TRUNCATE titel'
     @con.query 'TRUNCATE autor'
@@ -226,6 +232,17 @@ class Verwaltung
     
   def gibt_sprecher? sprecher
     result = @con.query "SELECT * FROM sprecher WHERE sprecher='" + sprecher + "';"
+    id = -1
+    result.each_hash {|e| id = e['id']}
+    if id == -1
+        return false
+    else
+      return id
+    end
+  end
+  
+  def gibt_wert? tabelle, spalte, wert
+    result = @con.query "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
     id = -1
     result.each_hash {|e| id = e['id']}
     if id == -1
@@ -289,6 +306,47 @@ class Verwaltung
     #hörbuch anlegen
     pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad) VALUES(?, ?)'
     pst.execute titel_id, pfad_id
+    return new_id
+  end
+  
+  
+  def datei_verkn_einfuegen datei_id, hb_id
+    pst = @con.prepare 'INSERT INTO dateien(hoerbuch, datei) VALUES(?, ?)'
+    pst.execute hb_id, datei_id
+  end
+  
+  def datei_einfuegen datei
+    #schauen, ob es den interpreten schon gibt
+    if !gibt_wert? "datei_interpret", "interpret", datei.interpret
+      pst = @con.prepare 'INSERT INTO datei_interpret(interpret) VALUES(?)'
+      pst.execute datei.interpret
+    end
+    interpret_id = gibt_wert? "datei_interpret", "interpret", datei.interpret
+    
+    #schauen, ob es das genre schon gibt
+    if !gibt_wert? "datei_genre", "genre", datei.genre
+      pst = @con.prepare 'INSERT INTO datei_genre(genre) VALUES(?)'
+      pst.execute datei.genre
+    end
+    genre_id = gibt_wert? "datei_genre", "genre", datei.genre
+    
+    #schauen, ob es das Jahr schon gibt
+    if !gibt_wert? "datei_jahr", "jahr", datei.jahr
+      pst = @con.prepare 'INSERT INTO datei_jahr(jahr) VALUES(?)'
+      pst.execute datei.jahr
+    end
+    jahr_id = gibt_wert? "datei_jahr", "jahr", datei.jahr
+    
+    #schauen, ob es das album schon gibt
+    if !gibt_wert? "datei_album", "album", datei.album
+      pst = @con.prepare 'INSERT INTO datei_album(album) VALUES(?)'
+      pst.execute datei.album
+    end
+    album_id = gibt_wert? "datei_album", "album", datei.album
+    
+    #feste sachen einfuegen
+    pst = @con.prepare 'INSERT INTO datei(pfad, titel, laenge, groesse, nummer, album, interpret, jahr, genre) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    pst.execute datei.pfad.expand_path.to_s, datei.titel.to_s, datei.laenge.to_i, datei.groesse.to_i, datei.nummer.to_i, album_id.to_i, interpret_id.to_i, jahr_id.to_i, genre_id.to_i
   end
   
   def clean_autoren
