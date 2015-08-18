@@ -15,7 +15,8 @@ class Main
     o.string '-a', '--author', 'the author to search for'
     o.string '-s', '--speaker', 'the speaker to search for'
     o.string '-t', '--title', 'the title to search for'
-    o.array '-i', '--insert', 'insert new audiobook into database; title,author,speaker,path (NO spaces)'
+    o.integer '-b', '--rating', 'print all audiobooks with rating (0-10)'
+    o.array '-i', '--insert', 'insert new audiobook into database; title,author,speaker,path,rating (NO spaces)'
     o.on '-h', '--help', 'display this help' do
       puts o
     end
@@ -83,6 +84,12 @@ class Main
       res.each {|e| @ausg.aus e }
     end
     
+    if @args[:rating]
+      res = @verw.suche_bewertung @args[:rating]
+      res.each {|e| @ausg.aus e }
+    end
+    
+    
     if @args[:cdb]
       if sure?
         @verw.clear_tables
@@ -94,8 +101,8 @@ class Main
     
     ins = @args[:insert]
     if ins.length > 0
-      if ins.length == 4
-        hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3] 
+      if ins.length == 5
+        hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
         @ausg.aus hb
         if sure?
           @verw.hoerbuch_einfuegen hb

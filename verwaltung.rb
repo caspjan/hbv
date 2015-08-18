@@ -17,6 +17,13 @@ class Verwaltung
     @con.query 'CREATE TABLE `sprecher` (`id` int(11) NOT NULL AUTO_INCREMENT, `sprecher` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1'
     @con.query 'CREATE TABLE `sprechers` (`hoerbuch` int(11) NOT NULL, `sprecher` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1'
     @con.query 'CREATE TABLE `titel` (`id` int(1) NOT NULL AUTO_INCREMENT, `titel` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `bewertung` (`id` int(11) NOT NULL AUTO_INCREMENT, `bewertung` int(11) NOT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `datei` ( `id` int(11) NOT NULL AUTO_INCREMENT, `pfad` text NOT NULL, `titel` text NOT NULL, `laenge` int(11) NOT NULL, `groesse` int(11) NOT NULL, `interpret` int(11) NOT NULL, `jahr` int(11) NOT NULL, `genre` int(11) NOT NULL, `album` int(11) NOT NULL, `nummer` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `dateien` ( `hoerbuch` int(11) NOT NULL, `datei` int(11) NOT NULL, UNIQUE KEY `cd` (`hoerbuch`,`datei`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `datei_album` ( `id` int(11) NOT NULL AUTO_INCREMENT, `album` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `datei_genre` ( `id` int(11) NOT NULL AUTO_INCREMENT, `genre` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `datei_interpret` ( `id` int(11) NOT NULL AUTO_INCREMENT, `interpret` text NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `datei_jahr` ( `id` int(11) NOT NULL AUTO_INCREMENT, `jahr` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
   end
   
   def full_dump
@@ -36,12 +43,15 @@ class Verwaltung
     titel = ""
     autor = Array.new
     sprecher = Array.new
+    bw = -1
     gibt = false
     hb_res.each_hash {|e|
       gibt = true
       #titel holen
       titel_res = @con.query 'SELECT * FROM titel WHERE id=' + e['titel'] + ';'
       titel_res.each_hash {|f| titel = f['titel']}
+      bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + e['bewertung'] + ";"
+      bw_res.each_hash {|i| bw = i['bewertung']}
       #pfad holen
       pfad_res = @con.query 'SELECT * FROM pfad WHERE id=' + e['pfad'] + ';'
       pfad_res.each_hash {|f| pfad = f['pfad']}
@@ -60,10 +70,51 @@ class Verwaltung
       }
     }
     if gibt
-      return Hoerbuch.new id, titel, autor, sprecher, pfad
+      return Hoerbuch.new id, titel, autor, sprecher, pfad, bw
     else
       return nil
     end
+  end
+  
+  def suche_bewertung bw
+    hbs = Array.new
+    #bewertung in der tabelle bewertung suchen
+    result = @con.query "SELECT * FROM bewertung WHERE bewertung=" + bw.to_s + ";"
+    #über die titel iterieren
+    result.each_hash {|row|
+      #alle hörbücher mit dem titel suchen
+      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE bewertung=" + row['id'] + ";"
+      hoerbuch_res.each_hash {|f|
+        titel_res = @con.query "SELECT * FROM titel WHERE id=" + f['titel'] + ";"
+        titel = ""
+        titel_res.each_hash {|e| titel << e['titel']}
+        #in der zwischentabelle nach allen autoren mit dem hoerbuch suchen
+        autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + f['id'] + ";"
+        autor = Array.new
+        autoren.each_hash {|e|
+          #in der tabelle autor nach den autoren mit der id suchen
+          autor_res = @con.query "SELECT * FROM autor WHERE id=" + e['autor'] + ";"
+          autor_res.each_hash {|g| autor << g['autor']}
+        }
+        #in der zwischentabelle nach allen sprechern mit dem hoerbuch suchen
+        sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + f['id'] + ";"
+        sprecher = Array.new
+        sprechers.each_hash {|e|
+          #in der tabelle sprecher nach den sprechern mit der id suchen
+          sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + e['sprecher'] + ";"
+          sprecher_res.each_hash {|g| sprecher << g['sprecher']}
+        }
+        pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + f['pfad'] + ";"
+        pfad = ""
+        pfad_res.each_hash {|e| pfad << e['pfad']}
+        bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + f['bewertung'] + ";"
+        bw = 0
+        bw_res.each_hash {|i| bw = i['bewertung']}
+        hb = Hoerbuch.new row['id'], titel, autor, sprecher, pfad, bw
+        hbs << hb
+      }
+    }
+    return hbs
   end
   
   def suche_sprecher sprecher
@@ -99,10 +150,13 @@ class Verwaltung
           titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
           titel = ""
           titel_res.each_hash {|i| titel << i['titel']}
+          bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + g['bewertung'] + ";"
+          bw = 0
+          bw_res.each_hash {|i| bw = i['bewertung']}
           pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
           pfad = ""
           pfad_res.each_hash {|i| pfad << i['pfad']}
-          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad
+          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad, bw
           hbs << hb
         }
       }
@@ -143,10 +197,13 @@ class Verwaltung
           titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
           titel = ""
           titel_res.each_hash {|i| titel << i['titel']}
+          bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + g['bewertung'] + ";"
+          bw = 0
+          bw_res.each_hash {|i| bw = i['bewertung']}
           pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
           pfad = ""
           pfad_res.each_hash {|i| pfad << i['pfad']}
-          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad
+          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad, bw
           hbs << hb
         }
       }
@@ -185,7 +242,10 @@ class Verwaltung
         pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + f['pfad'] + ";"
         pfad = ""
         pfad_res.each_hash {|e| pfad << e['pfad']}
-        hb = Hoerbuch.new row['id'], titel, autor, sprecher, pfad
+        bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + f['bewertung'] + ";"
+        bw = 0
+        bw_res.each_hash {|i| bw = i['bewertung']}
+        hb = Hoerbuch.new row['id'], titel, autor, sprecher, pfad, bw
         hbs << hb
       }
     }
@@ -265,14 +325,21 @@ class Verwaltung
     end
     titel_id = gibt_wert? "titel", "titel", hb.titel
     
+    #wenn die bewertung noch nicht existiert, neu anlegen
+    if !gibt_wert? "bewertung", "bewertung", hb.bewertung
+      pst = @con.prepare 'INSERT INTO bewertung(bewertung) VALUES(?)'
+      pst.execute hb.bewertung
+    end
+    bewertung_id = gibt_wert? "bewertung", "bewertung", hb.bewertung
+    
     #pfad neu anlegen
     pst = @con.prepare 'INSERT INTO pfad(pfad) VALUES(?)'
     pst.execute hb.pfad
     pfad_id = calc_next_id('pfad') - 1
     
     #hörbuch anlegen
-    pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad) VALUES(?, ?)'
-    pst.execute titel_id, pfad_id
+    pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad, bewertung) VALUES(?, ?, ?)'
+    pst.execute titel_id, pfad_id, bewertung_id
     return new_id
   end
   

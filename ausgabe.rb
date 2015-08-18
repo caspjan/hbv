@@ -27,7 +27,7 @@ class Ausgabe
       end
       }
     out.gsub! "%s", sprecher
-    
+    out.gsub! "%b", hb.bewertung.to_s
     out.gsub! "%p", hb.pfad
     puts
     puts out

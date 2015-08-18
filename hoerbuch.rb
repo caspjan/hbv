@@ -4,12 +4,14 @@ class Hoerbuch
   attr_accessor:pfad
   attr_accessor:sprecher
   attr_accessor:id
+  attr_accessor:bewertung
   
-  def initialize id, titel, autor, sprecher, pfad
+  def initialize id, titel, autor, sprecher, pfad, bewertung
     @id = id
     @titel = titel
     @autor = autor
     @pfad = pfad
     @sprecher = sprecher
+    @bewertung = bewertung
   end
 end
