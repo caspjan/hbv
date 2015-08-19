@@ -108,13 +108,24 @@ class Main
     
     ins = @args[:insert]
     if ins.length > 0
+      ins.map! {|e|
+        e.rstrip!
+        e.lstrip!
+      }
+      ins.each {|e|
+        puts e
+      }
       if ins.length == 5
-        hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
-        @ausg.aus hb, nil
-        if sure?
-          @verw.hoerbuch_einfuegen hb
+        if Pathname.new(ins[3]).exist?
+          hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
+          @ausg.aus hb, nil
+          if sure?
+            @verw.hoerbuch_einfuegen hb
+          else
+            puts 'cancelled.'
+          end
         else
-          puts 'cancelled.'
+          puts "Den Ordner gibts ned."
         end
       end
     end
