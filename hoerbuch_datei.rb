@@ -9,6 +9,7 @@ class Hoerbuch_Datei
   attr_accessor:genre
   attr_accessor:nummer
   attr_accessor:hoerbuch_id
+  attr_accessor:id
   
   def initialize
     

@@ -60,7 +60,7 @@ class Main
       if !res.nil?
         @ausg.aus res, files?(res.id.to_i)
         if sure?
-          @verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil
+          @verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil, nil
         end
       else
         puts "Nothing found."

@@ -82,6 +82,7 @@ class Verwaltung
       datei = @con.query 'SELECT * FROM datei WHERE id=' + e['datei'] + ';'
       hbd = Hoerbuch_Datei.new
       datei.each_hash {|f|
+        hbd.id = f['id']
         hbd.pfad = f['pfad']
         hbd.titel = f['titel']
         hbd.laenge = f['laenge']
@@ -457,6 +458,70 @@ class Verwaltung
     }
   end
   
+  def clean_datei_interpreten
+    #alle interpreten einlesen
+    interpreten = @con.query 'SELECT * FROM datei_interpret'
+    interpreten.each_hash {|e|
+      kommt_vor = false
+      #überprüfen, ob die id des interpreten in der tabelle datei steht
+      datei = @con.query 'SELECT * FROM datei WHERE interpret=' + e['id'] + ';'
+      datei.each {|f| kommt_vor = true}
+      #wenn nicht, loschen
+      if !kommt_vor
+        #sprecher löschen
+        @con.query 'DELETE FROM datei_interpret WHERE id=' + e['id'] + ';'
+      end
+    }
+  end
+  
+  def clean_datei_alben
+    #alle alben einlesen
+    alben = @con.query 'SELECT * FROM datei_album'
+    alben.each_hash {|e|
+      kommt_vor = false
+      #überprüfen, ob die id des album in der tabelle datei steht
+      datei = @con.query 'SELECT * FROM datei WHERE album=' + e['id'] + ';'
+      datei.each {|f| kommt_vor = true}
+      #wenn nicht, loschen
+      if !kommt_vor
+        #sprecher löschen
+        @con.query 'DELETE FROM datei_album WHERE id=' + e['id'] + ';'
+      end
+    }
+  end
+  
+  def clean_datei_genres
+    #alle genres einlesen
+    genres = @con.query 'SELECT * FROM datei_genre'
+    genres.each_hash {|e|
+      kommt_vor = false
+      #überprüfen, ob die id des interpreten in der tabelle datei steht
+      datei = @con.query 'SELECT * FROM datei WHERE genre=' + e['id'] + ';'
+      datei.each {|f| kommt_vor = true}
+      #wenn nicht, loschen
+      if !kommt_vor
+        #sprecher löschen
+        @con.query 'DELETE FROM datei_genre WHERE id=' + e['id'] + ';'
+      end
+    }
+  end
+  
+  def clean_datei_jahr
+    #alle jahre einlesen
+    jahr = @con.query 'SELECT * FROM datei_jahr'
+    jahr.each_hash {|e|
+      kommt_vor = false
+      #überprüfen, ob die id des interpreten in der tabelle datei steht
+      datei = @con.query 'SELECT * FROM datei WHERE jahr=' + e['id'] + ';'
+      datei.each {|f| kommt_vor = true}
+      #wenn nicht, loschen
+      if !kommt_vor
+        #sprecher löschen
+        @con.query 'DELETE FROM datei_jahr WHERE id=' + e['id'] + ';'
+      end
+    }
+  end
+  
   def hoerbuch_loeschen hb
     #id des pfades holen und loeschen
     hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + hb.id + ';'
@@ -475,7 +540,27 @@ class Verwaltung
       clean_sprecher
       #hoerbuch loeschen
       @con.query 'DELETE FROM hoerbuecher WHERE id=' + hb.id + ';'
+      #alle dateien des albums loeschen
+      dateien = get_dateien hb.id
+      dateien.each {|f|
+        datei_loeschen f.id
+      }
+      #alle verknüpfungen zum hoerbuch loschen
+      @con.query 'DELETE FROM dateien WHERE hoerbuch=' + hb.id + ';'
     }
+  end
+  
+  def datei_loeschen id
+    #datei loeschen
+    @con.query 'DELETE FROM datei WHERE id=' + id + ';'
+    #checken, ob es interpreten ohne datei gibt
+    clean_datei_interpreten
+    #checken, ob es alben ohne datei gibt
+    clean_datei_alben
+    #checken, ob es genres ohne datei gibt
+    clean_datei_genres
+    #checken, ob es jahre ohne datei gibt
+    clean_datei_jahr
   end
   
   def calc_next_id tabelle
