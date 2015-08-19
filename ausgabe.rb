@@ -5,7 +5,40 @@ class Ausgabe
     @d_gr = einst.datei_groesse
   end
   
-  def aus hb, dateien
+  def calc_size size
+    #size in Float ändern
+    size = size.to_f
+    ret = ""
+    #Die Größe auf das Fromat bringen, das im Configfile angegeben wurde
+    #wenn c angegeben ist, das sinnvollste bestimmen
+    if @d_gr.eql? "c"
+      #wenn die fertige groesse in KB größer als 1000 und in MB kleiner als 1000, dann nimm MB
+      if (size / (2**10).to_f) < 1000
+        d_gr = "KiB"
+      elsif (size / (2**20).to_f) < 1000
+        d_gr = "MiB"
+      elsif (size / (2**20).to_f) > 1000
+        d_gr = "GiB"
+      end
+    end
+    
+    if d_gr.eql? "KB"
+      ret = (size / (10**3).to_f).round(2).to_s << " " + d_gr
+    elsif d_gr.eql? "MB"
+      ret = (size / (10**6).to_f).round(2).to_s << " " + d_gr
+    elsif d_gr.eql? "GB"
+      ret = (size / (10**9).to_f).round(2).to_s << " " + d_gr
+    elsif d_gr.eql? "KiB"
+      ret = (size / (2**10).to_f).round(2).to_s << " " + d_gr
+    elsif d_gr.eql? "MiB"
+      ret = (size / (2**20).to_f).round(2).to_s << " " + d_gr
+    elsif d_gr.eql? "GiB"
+      ret = (size / (2**30).to_f).round(2).to_s << " " + d_gr
+    end
+    return ret
+  end
+  
+  def aus hb, dateien, size
     out = @format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
     out.gsub! "%id", hb.id.to_s
@@ -27,10 +60,12 @@ class Ausgabe
       if i < anz_sprecher-1
         sprecher << ', '
       end
-      }
+    }
+    out.gsub! "%g", calc_size(size) if !size.nil?
     out.gsub! "%s", sprecher
     out.gsub! "%b", hb.bewertung.to_s
     out.gsub! "%p", hb.pfad
+    
     puts
     puts out
     if !dateien.nil?
@@ -58,20 +93,7 @@ class Ausgabe
         la << "s"
         
         d_out = @d_format.gsub "%n", "\n"
-        #dateigroesse konveriren
-        if @d_gr.eql? "KB"
-          d_out.gsub! "%s", (e.groesse.to_f / (10**3).to_f).round(2).to_s << " " + @d_gr
-        elsif @d_gr.eql? "MB"
-          d_out.gsub! "%s", (e.groesse.to_f / (10**6).to_f).round(2).to_s << " " + @d_gr
-        elsif @d_gr.eql? "GB"
-          d_out.gsub! "%s", (e.groesse.to_f / (10**9).to_f).round(2).to_s << " " + @d_gr
-        elsif @d_gr.eql? "KiB"
-          d_out.gsub! "%s", (e.groesse.to_f / (2**10).to_f).round(2).to_s << " " + @d_gr
-        elsif @d_gr.eql? "MiB"
-          d_out.gsub! "%s", (e.groesse.to_f / (2**20).to_f).round(2).to_s << " " + @d_gr
-        elsif @d_gr.eql? "GiB"
-          d_out.gsub! "%s", (e.groesse.to_f / (2**30).to_f).round(2).to_s << " " + @d_gr
-        end
+        
         #restliche variablen ersetzen
         d_out.gsub! "%tb", "\t"
         d_out.gsub! "%p", e.pfad
@@ -82,11 +104,10 @@ class Ausgabe
         d_out.gsub! "%no", e.nummer
         d_out.gsub! "%j", e.jahr
         d_out.gsub! "%l", la
-        d_out.gsub! "%s", e.groesse
+        d_out.gsub! "%s", calc_size(e.groesse)
         puts
         puts d_out
       } 
     end
-    
   end
 end

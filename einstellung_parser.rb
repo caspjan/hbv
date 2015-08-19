@@ -34,6 +34,8 @@ class Einstellung_Parser
             g.chomp!
             g.prepend '.'
           }
+        when 'hb_groesse'
+          @einst.hb_groesse = f[1]
         end
       end
       }

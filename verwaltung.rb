@@ -569,4 +569,12 @@ class Verwaltung
     res.each_hash {|e| id = e['Auto_increment'].to_i}
     return id
   end
+  
+  def get_hb_size hb_dateien
+    ges_gr = Float(0)
+    hb_dateien.each {|e|
+      ges_gr += e.groesse.to_f
+    }
+    return ges_gr
+  end
 end

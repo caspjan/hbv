@@ -38,7 +38,17 @@ class Main
     
     def files? hb_id
       if @args[:files]
-        return @verw.get_dateien hb_id
+        @dateien = @verw.get_dateien hb_id
+        return @dateien
+      else
+        return nil
+      end
+    end
+    
+    def size? hb_id
+      if @einst.format.include? "%g"
+        @dateien = @verw.get_dateien hb_id if @dateien.nil?
+        return @verw.get_hb_size(@dateien)
       else
         return nil
       end
@@ -51,14 +61,14 @@ class Main
     
     if @args[:fd]
       res = @verw.full_dump
-      res.each {|e| @ausg.aus e, files?(e.id) }
+      res.each {|e| @ausg.aus e, files?(e.id), size? }
     end
     
     if @args[:remove]
       id = @args[:remove]
       res = @verw.get_hb id
       if !res.nil?
-        @ausg.aus res, files?(res.id.to_i)
+        @ausg.aus res, files?(res.id.to_i), size?(id)
         if sure?
           @verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil, nil
         end
@@ -70,7 +80,7 @@ class Main
     if @args[:id]
       res = @verw.get_hb @args[:id]
       if !res.nil?
-        @ausg.aus res, files?(@args[:id])
+          @ausg.aus res, files?(@args[:id]), size?(@args[:id])
       else
         puts "Nothing found."
       end
@@ -78,22 +88,22 @@ class Main
     
     if @args[:author]
       res = @verw.suche_autor @args[:author]
-      res.each {|e| @ausg.aus e, files?(e.id) }
+      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id) }
     end
     
     if @args[:title]
       res = @verw.suche_titel @args[:title]
-      res.each {|e| @ausg.aus e, files?(e.id)}
+      res.each {|e| @ausg.aus e, files?(e.id), size(e.id)}
     end
     
     if @args[:speaker]
       res = @verw.suche_sprecher @args[:speaker]
-      res.each {|e| @ausg.aus e, files?(e.id) }
+      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id) }
     end
     
     if @args[:rating]
       res = @verw.suche_bewertung @args[:rating]
-      res.each {|e| @ausg.aus e, files?(e.id) }
+      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id) }
     end
     
     
@@ -108,6 +118,7 @@ class Main
     
     ins = @args[:insert]
     if ins.length > 0
+      #leerzeichen links und rechts entfernen
       ins.map! {|e|
         e.rstrip!
         e.lstrip!
@@ -118,7 +129,7 @@ class Main
       if ins.length == 5
         if Pathname.new(ins[3]).exist?
           hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
-          @ausg.aus hb, nil
+          @ausg.aus hb, nil, nil
           if sure?
             @verw.hoerbuch_einfuegen hb
           else
