@@ -1,4 +1,4 @@
-require 'pathname'
+require_relative 'require'
 
 class Pfad_Parser
   attr_reader :dateien

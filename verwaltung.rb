@@ -1,9 +1,4 @@
-require 'mysql'
-require_relative 'einstellung_parser'
-require_relative 'hoerbuch'
-require_relative 'hoerbuch_datei'
-require_relative 'pfad_parser'
-require_relative 'datei_meta'
+require_relative 'require'
 
 class Verwaltung
   def initialize einst

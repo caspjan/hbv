@@ -1,7 +1,5 @@
 #!/bin/env ruby
-require 'slop'
-require_relative 'verwaltung'
-require_relative 'ausgabe'
+require_relative 'require'
 
 class Main
   def initialize
@@ -27,9 +25,7 @@ class Main
     o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
     o.bool '--files', 'print all files of the audiobook'
     o.bool '--init-db', 'create all needed tables'
-    }
-  
-    
+    } 
     
     def sure?
       if @args[:force]
