@@ -2,6 +2,8 @@ require 'mysql'
 require_relative 'einstellung_parser'
 require_relative 'hoerbuch'
 require_relative 'hoerbuch_datei'
+require_relative 'pfad_parser'
+require_relative 'datei_meta'
 
 class Verwaltung
   def initialize einst
@@ -372,7 +374,20 @@ class Verwaltung
     #hörbuch anlegen
     pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad, bewertung) VALUES(?, ?, ?)'
     pst.execute titel_id, pfad_id, bewertung_id
-    return new_id
+    
+    #dateien einlesen
+    pp = Pfad_Parser.new hb.pfad
+    dateien = pp.parse
+    dateien.each_with_index {|e,i|
+      #metakram von datei holen
+      dm = Datei_Meta_Parser.new e, i+1
+      #dateien in die datenbank schreiben
+      datei_next_id = calc_next_id "datei"
+      datei_einfuegen dm.parse
+      #verknüpfunge von hoerbuch und datei in die datenbank tun
+      datei_verkn_einfuegen datei_next_id, new_id
+    }
+    
   end
   
   

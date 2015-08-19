@@ -114,7 +114,7 @@ class Main
     if ins.length > 0
       if ins.length == 5
         hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
-        @ausg.aus hb
+        @ausg.aus hb, nil
         if sure?
           @verw.hoerbuch_einfuegen hb
         else
