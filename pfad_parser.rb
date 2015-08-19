@@ -2,8 +2,9 @@ require_relative 'require'
 
 class Pfad_Parser
   attr_reader :dateien
-  def initialize hb_ordner
+  def initialize hb_ordner, einst
     @ordner = hb_ordner
+    @einst = einst
   end
   
   def parse
@@ -14,7 +15,6 @@ class Pfad_Parser
     p.children.each {|e| 
       o = e.to_s.split '/'
       d = o[-1]
-      #puts d
       ['CD', 'cd', 'Cd', 'cD'].each {|f|
         if d.start_with? f
           cd_count += 1
@@ -33,7 +33,7 @@ class Pfad_Parser
         dateien_tmp = Array.new
         e.entries.each {|f|
           f = e.join f
-          ['.mp3', '.flac', '.wav', '.wma'].each {|g|
+          @einst.datei_endungen.each {|g|
             if f.extname.eql? g
               dateien_tmp << f
             end
@@ -47,7 +47,7 @@ class Pfad_Parser
     else
       #alle dateien im ordner in das array schieben und sortieren
       p.children.each {|e|
-        ['.mp3', '.flac', '.wav', '.wma'].each {|g|
+        @einst.datei_endungen.each {|g|
           if e.extname.eql? g
             dateien << e
           end

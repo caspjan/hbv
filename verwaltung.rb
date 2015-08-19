@@ -372,7 +372,7 @@ class Verwaltung
     pst.execute titel_id, pfad_id, bewertung_id
     
     #dateien einlesen
-    pp = Pfad_Parser.new hb.pfad
+    pp = Pfad_Parser.new hb.pfad, @einst
     dateien = pp.parse
     dateien.each_with_index {|e,i|
       #metakram von datei holen

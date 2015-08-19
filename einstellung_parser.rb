@@ -27,6 +27,13 @@ class Einstellung_Parser
           @einst.datei_format = f[1]
         when 'datei_groesse'
           @einst.datei_groesse = f[1]
+        when 'datei_endungen'
+          @einst.datei_endungen = f[1].split ','
+          #punkt vor endung einfuegen
+          @einst.datei_endungen.map! {|g|
+            g.chomp!
+            g.prepend '.'
+          }
         end
       end
       }
