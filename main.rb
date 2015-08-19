@@ -54,6 +54,15 @@ class Main
       end
     end
     
+    def laenge? hb_id
+      if @einst.format.include? "%l"
+        @dateien = @verw.get_dateien hb_id if @dateien.nil?
+        return @verw.get_hb_laenge(@dateien)
+      else
+        return nil
+      end
+    end
+    
     if @args[:'init-db']
       @verw.init_db
       puts "done."
@@ -61,7 +70,7 @@ class Main
     
     if @args[:fd]
       res = @verw.full_dump
-      res.each {|e| @ausg.aus e, files?(e.id), size? }
+      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id)}
     end
     
     if @args[:remove]
@@ -105,7 +114,6 @@ class Main
       res = @verw.suche_bewertung @args[:rating]
       res.each {|e| @ausg.aus e, files?(e.id), size?(e.id) }
     end
-    
     
     if @args[:cdb]
       if sure?

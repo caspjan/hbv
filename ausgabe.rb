@@ -38,7 +38,30 @@ class Ausgabe
     return ret
   end
   
-  def aus hb, dateien, size
+  def calc_laenge laenge
+    #laenge in stunden, minuten und sekunden berechnen
+    la = ""
+    l = laenge.to_i
+    l = 0 if laenge.nil?
+    if l > 3600
+      h = l / 3600
+      la << h.to_s
+      la << "h "
+    end
+    if l > 60
+      h = 0 if h.nil?
+      m = (l - (h*3600)) / 60
+      la << m.to_s
+      la << "m "
+    end
+    h = 0 if h.nil?
+    m = 0 if m.nil?
+    s = (l - (h*3600) - (m*60))
+    la << s.to_s
+    la << "s"
+  end
+  
+  def aus hb, dateien, size, laenge
     out = @format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
     out.gsub! "%id", hb.id.to_s
@@ -62,6 +85,7 @@ class Ausgabe
       end
     }
     out.gsub! "%g", calc_size(size) if !size.nil?
+    out.gsub! "%l", calc_laenge(laenge) if !laenge.nil?
     out.gsub! "%s", sprecher
     out.gsub! "%b", hb.bewertung.to_s
     out.gsub! "%p", hb.pfad
@@ -71,26 +95,7 @@ class Ausgabe
     if !dateien.nil?
       puts "Dateien:"
       dateien.each {|e|
-        #laenge in stunden, minuten und sekunden berechnen
-        la = ""
-        l = e.laenge.to_i
-        l = 0 if e.laenge.nil?
-        if l > 3600
-          h = l / 3600
-          la << h.to_s
-          la << "h "
-        end
-        if l > 60
-          h = 0 if h.nil?
-          m = (l - (h*3600)) / 60
-          la << m.to_s
-          la << "m "
-        end
-        h = 0 if h.nil?
-        m = 0 if m.nil?
-        s = (l - (h*3600) - (m*60))
-        la << s.to_s
-        la << "s"
+        
         
         d_out = @d_format.gsub "%n", "\n"
         

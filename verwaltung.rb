@@ -577,4 +577,12 @@ class Verwaltung
     }
     return ges_gr
   end
+  
+  def get_hb_laenge hb_dateien
+    ges_len = 0
+    hb_dateien.each {|e|
+      ges_len += e.laenge.to_f
+    }
+    return ges_len
+  end
 end
