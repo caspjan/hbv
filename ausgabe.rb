@@ -3,6 +3,7 @@ class Ausgabe
     @format = einst.format
     @d_format = einst.datei_format
     @d_gr = einst.datei_groesse
+    @stats_format = einst.stats_format
   end
   
   def calc_size size
@@ -61,6 +62,19 @@ class Ausgabe
     la << "s"
   end
   
+  def stats_aus stats
+    out = @stats_format.gsub "%n", "\n"
+    out.gsub! "%tb", "\t"
+    out.gsub! "%h", stats.hb_ges
+    out.gsub! "%s", calc_size(stats.size_ges)
+    out.gsub! "%d", stats.dateien_ges.to_s
+    out.gsub! "%l", calc_laenge(stats.laenge_ges)
+    out.gsub! "%bb", stats.bewertungen.to_s
+    out.gsub! "%b", stats.bw_durchschn.to_s
+    
+    puts out
+  end
+  
   def aus hb, dateien, size, laenge
     out = @format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
@@ -94,8 +108,7 @@ class Ausgabe
     puts out
     if !dateien.nil?
       puts "Dateien:"
-      dateien.each {|e|
-        
+      dateien.each {|e|       
         
         d_out = @d_format.gsub "%n", "\n"
         

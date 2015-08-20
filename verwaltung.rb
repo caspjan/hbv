@@ -600,4 +600,34 @@ class Verwaltung
     }
     return ges_len
   end
+  
+  def get_stats
+    stats = Stats.new
+    #anzahl der Hoerbucher
+    res = @con.query 'SELECT COUNT(*) FROM hoerbuecher'
+    res.each_hash {|e| stats.hb_ges = e['COUNT(*)']}
+    #gesamtlaenge + groesse aller Hoerbucher
+    bw = 0
+    hbs_res = @con.query 'SELECT * FROM hoerbuecher'
+    hbs_res.each_hash {|e|
+      dateien = get_dateien e['id']
+      stats.laenge_ges += get_hb_laenge dateien
+      stats.size_ges += get_hb_size dateien
+      dateien.each {|f|
+        stats.dateien_ges += 1
+      }
+      bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + e['bewertung'] + ";"
+      bw_res.each_hash {|i|
+        bw += i['bewertung'].to_i
+        f = i['bewertung']
+        if stats.bewertungen[f].nil?
+          stats.bewertungen[f] = 0
+        end
+        
+        stats.bewertungen[f] += 1
+        }
+    }
+   stats.bw_durchschn = Float(bw) / Float(stats.hb_ges)
+   return stats
+  end
 end

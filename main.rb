@@ -25,6 +25,7 @@ class Main
     o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
     o.bool '--files', 'print all files of the audiobook'
     o.bool '--init-db', 'create all needed tables'
+    o.bool '--stats', 'print stats'
     } 
     
     def sure?
@@ -61,6 +62,10 @@ class Main
       else
         return nil
       end
+    end
+    
+    if @args[:stats]
+      @ausg.stats_aus @verw.get_stats
     end
     
     if @args[:'init-db']

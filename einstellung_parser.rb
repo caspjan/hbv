@@ -36,6 +36,8 @@ class Einstellung_Parser
           }
         when 'hb_groesse'
           @einst.hb_groesse = f[1]
+        when 'stats_format'
+          @einst.stats_format = f[1]
         end
       end
       }
