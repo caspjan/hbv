@@ -77,7 +77,7 @@ class Main
       id = @args[:remove]
       res = @verw.get_hb id
       if !res.nil?
-        @ausg.aus res, files?(res.id.to_i), size?(id)
+        @ausg.aus res, files?(res.id.to_i), size?(id), files?(id)
         if sure?
           @verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil, nil
         end
@@ -137,7 +137,7 @@ class Main
       if ins.length == 5
         if Pathname.new(ins[3]).exist?
           hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
-          @ausg.aus hb, nil, nil
+          @ausg.aus hb, nil, nil, nil
           if sure?
             @verw.hoerbuch_einfuegen hb
           else

@@ -108,7 +108,7 @@ class Ausgabe
         d_out.gsub! "%g", e.genre
         d_out.gsub! "%no", e.nummer
         d_out.gsub! "%j", e.jahr
-        d_out.gsub! "%l", la
+        d_out.gsub! "%l", calc_laenge(e.laenge)
         d_out.gsub! "%s", calc_size(e.groesse)
         puts
         puts d_out

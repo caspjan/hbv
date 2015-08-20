@@ -296,6 +296,7 @@ class Verwaltung
     @con.query 'TRUNCATE pfad'
     @con.query 'TRUNCATE sprecher'
     @con.query 'TRUNCATE sprechers'
+    @con.query 'TRUNCATE bewertung'
   end
   
   def gibt_wert? tabelle, spalte, wert
@@ -522,6 +523,18 @@ class Verwaltung
     }
   end
   
+  def clean_bewertung
+    bw_res = @con.query 'SELECT * FROM bewertung'
+    bw_res.each_hash {|e|
+      gibt = false
+      hb_res = @con.query 'SELECT *FROM hoerbuecher WHERE id=' + e['id'] + ';'
+      hb_res.each {|f|
+        gibt = true
+      }
+      @con.query 'DELETE FROM bewertung WHERE id=' + e['id'] + ';' if !gibt
+    }
+  end
+  
   def hoerbuch_loeschen hb
     #id des pfades holen und loeschen
     hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + hb.id + ';'
@@ -538,6 +551,8 @@ class Verwaltung
       clean_autoren
       #checken, ob es sprecher ohne hoerbuch gibt
       clean_sprecher
+      #checken, ob es bewertungen ohne hoerbuch gibt
+      clean_bewertung
       #hoerbuch loeschen
       @con.query 'DELETE FROM hoerbuecher WHERE id=' + hb.id + ';'
       #alle dateien des albums loeschen
