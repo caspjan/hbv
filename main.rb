@@ -26,6 +26,8 @@ class Main
     o.bool '--files', 'print all files of the audiobook'
     o.bool '--init-db', 'create all needed tables'
     o.bool '--stats', 'print stats'
+    o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new author.'
+    o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
     } 
     
     def sure?
@@ -61,6 +63,25 @@ class Main
         return @verw.get_hb_laenge(@dateien)
       else
         return nil
+      end
+    end
+    
+    if @args[:ua]
+      #checken, ob das array die richtige laenge hat
+      ua = @args[:ua]
+      if ua.length == 2
+        #altes Hoerbuch ausgeben
+        id = ua[0]
+        hb = @verw.get_hb id
+        puts 'Altes Hoerbuch:'
+        @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+        hb_new = hb
+        hb_new.autor = Array.new << ua[1]
+        puts 'Neues Hoerbuch:'
+        @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+        if sure?
+          @verw.change id, 'autor', hb_new.autor, hb.autor
+        end
       end
     end
     

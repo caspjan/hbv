@@ -630,4 +630,48 @@ class Verwaltung
    stats.bw_durchschn = Float(bw) / Float(stats.hb_ges)
    return stats
   end
+  
+  def change hb_id, spalte, wert_neu, wert_alt
+    #hoerbuchtabelle aendern
+    if spalte.eql? 'titel' or spalte.eql? 'pfad'
+      #titel/pfad ändern
+      @con.query 'UPDATE ' + spalte + ' SET ' + spalte + '=' + wert_neu + ' WHERE ' + spalte + '=' + wert_alt + ';'
+      #neue id in hoerbuch tabelle schreiben
+      id = gibt_wert? spalte, spalte, wert_neu
+      @con.query 'UPDATE hoerbuecher SET ' + spalte + '=' + id + ' WHERE id=' + hb_id + ";"
+      #beim pfad alle dateien neu einlesen
+      if spalte.eql? 'pfad'
+        #alle variablen vom alten hoerbuch holen, das alte löschen, und ein neues anlegen
+        hb = get_hb hb_id
+        #altes löschen
+        hoerbuch_loeschen hb
+        #neues einfuegen
+        hoerbuch_einfuegen hb
+      end
+    elsif spalte.eql? 'autor' or spalte.eql? 'sprecher'
+      #schauen, ob es den neuen autor/sprecher gibt
+      tabelle = "autoren" if spalte.eql? "autor"
+      tabelle = "sprechers" if spalte.eql? "sprecher"
+      id = gibt_wert? spalte, spalte, wert_neu
+      if id
+        #verweis in zwischentabelle ändern
+        @con.query 'UPDATE ' + tabelle + ' SET ' + spalte + "='" + wert_neu + "' WHERE hoerbuch=" + hb_id + " and " + spalte + "=" + id + ';'
+      else
+        #autor/sprecher neu anlegen
+        wert_neu.each_with_index {|e,i|
+          pst = @con.prepare 'INSERT INTO ' + spalte + '(' + spalte + ') VALUES(?)'
+          pst.execute e
+          #verweis(e) in zwischentabelle ändern
+          id = gibt_wert? spalte, spalte, e
+          @con.query 'UPDATE ' + tabelle + ' SET ' + spalte + "='" + e + "' WHERE hoerbuch=" + hb_id + " and " + spalte + "=" + id + ';'
+        }
+        
+        #alten autor/sprecher löschen
+        clean_autoren
+        clean_sprecher
+      end
+    elsif spalte.eql? ''
+    end
+    
+  end
 end
