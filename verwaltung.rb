@@ -635,7 +635,10 @@ class Verwaltung
     #hoerbuchtabelle aendern
     if spalte.eql? 'titel' or spalte.eql? 'pfad'
       #titel/pfad ändern
-      @con.query 'UPDATE ' + spalte + ' SET ' + spalte + '=' + wert_neu + ' WHERE ' + spalte + '=' + wert_alt + ';'
+      puts hb_id, spalte, wert_neu, wert_alt
+      puts 'UPDATE ' + spalte + ' SET ' + spalte + '="' + wert_neu + '" WHERE ' + spalte + '="' + wert_alt + '";'
+     
+      @con.query 'UPDATE ' + spalte + ' SET ' + spalte + '="' + wert_neu + '" WHERE ' + spalte + '="' + wert_alt + '";'
       #neue id in hoerbuch tabelle schreiben
       id = gibt_wert? spalte, spalte, wert_neu
       @con.query 'UPDATE hoerbuecher SET ' + spalte + '=' + id + ' WHERE id=' + hb_id + ";"

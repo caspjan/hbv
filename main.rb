@@ -28,6 +28,7 @@ class Main
     o.bool '--stats', 'print stats'
     o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new author.'
     o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
+    o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, sedond is the new title.'
     } 
     
     def sure?
@@ -81,6 +82,25 @@ class Main
         @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
         if sure?
           @verw.change id, 'autor', hb_new.autor, hb.autor
+        end
+      end
+    end
+    
+    if @args[:ut]
+      #checken, ob das array die richtige laenge hat
+      ut = @args[:ut]
+      if ut.length == 2
+        #altes Hoerbuch ausgeben
+        id = ut[0]
+        hb = @verw.get_hb id
+        puts 'Altes Hoerbuch:'
+        @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+        hb_new = hb.clone
+        hb_new.titel = ut[1]
+        puts 'Neues Hoerbuch:'
+        @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+        if sure?
+          @verw.change id, 'titel', hb_new.titel, hb.titel
         end
       end
     end
