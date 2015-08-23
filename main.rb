@@ -94,8 +94,8 @@ class Main
         hb = @verw.get_hb id
         puts 'Altes Hoerbuch:'
         @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        hb_new = hb
-        hb_new.sprecher = Array.new << ua[1]
+        hb_new = hb.clone
+        hb_new.sprecher = Array.new << us[1]
         puts 'Neues Hoerbuch:'
         @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
         if sure?
