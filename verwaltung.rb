@@ -663,9 +663,18 @@ class Verwaltung
           pst.execute e
           #verweis(e) in zwischentabelle ändern
           id = gibt_wert? spalte, spalte, e
-          @con.query 'UPDATE ' + tabelle + ' SET ' + spalte + "='" + e + "' WHERE hoerbuch=" + hb_id + " and " + spalte + "=" + id + ';'
+          #id des alten wertes ermitteln
+          wert_alt.each {|g| 
+            res = @con.query 'SELECT * FROM ' + spalte + ' WHERE ' + spalte + '="' + g + '";'
+            j = 0
+            res.each_hash {|f|
+              if j == i
+                @con.query 'UPDATE ' + tabelle + ' SET ' + spalte + "='" + id + "' WHERE hoerbuch=" + hb_id + " and " + spalte + "=" + f['id'] + ';'
+              end
+              j += 1
+            }
+          }
         }
-        
         #alten autor/sprecher löschen
         clean_autoren
         clean_sprecher

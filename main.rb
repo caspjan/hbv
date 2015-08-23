@@ -75,12 +75,31 @@ class Main
         hb = @verw.get_hb id
         puts 'Altes Hoerbuch:'
         @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        hb_new = hb
+        hb_new = hb.clone
         hb_new.autor = Array.new << ua[1]
         puts 'Neues Hoerbuch:'
         @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
         if sure?
           @verw.change id, 'autor', hb_new.autor, hb.autor
+        end
+      end
+    end
+    
+    if @args[:us]
+      #checken, ob das array die richtige laenge hat
+      us = @args[:us]
+      if us.length == 2
+        #altes Hoerbuch ausgeben
+        id = us[0]
+        hb = @verw.get_hb id
+        puts 'Altes Hoerbuch:'
+        @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+        hb_new = hb
+        hb_new.sprecher = Array.new << ua[1]
+        puts 'Neues Hoerbuch:'
+        @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+        if sure?
+          @verw.change id, 'sprecher', hb_new.sprecher, hb.sprecher
         end
       end
     end
