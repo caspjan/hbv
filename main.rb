@@ -28,7 +28,8 @@ class Main
     o.bool '--stats', 'print stats'
     o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new author.'
     o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
-    o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, sedond is the new title.'
+    o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, second is the new title.'
+    o.array '-up', '--update-path', 'update the path of audiobook. First argument is the id of audiobook, second is the new path. All new files are parsed.'
     } 
     
     def sure?
@@ -101,6 +102,30 @@ class Main
         @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
         if sure?
           @verw.change id, 'titel', hb_new.titel, hb.titel
+        end
+      end
+    end
+    
+    if @args[:up]
+      #checken, ob das array die richtige laenge hat
+      up = @args[:up]
+      if up.length == 2
+        #checken, ob es den pfad gibt
+        if Pathname(up[1]).exist?
+          #altes Hoerbuch ausgeben
+          id = up[0]
+          hb = @verw.get_hb id
+          puts 'Altes Hoerbuch:'
+          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          hb_new = hb.clone
+          hb_new.pfad = up[1]
+          puts 'Neues Hoerbuch:'
+          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          if sure?
+            @verw.change id, 'pfad', hb_new.pfad, hb.pfad
+          end
+        else
+          puts "Den Ordner gibts ned!"
         end
       end
     end
