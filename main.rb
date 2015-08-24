@@ -240,4 +240,17 @@ class Main
     end
   end
 end
-Main.new
+begin
+  Main.new
+rescue Mysql::Error => e
+  #connection refused
+  if e.errno == 111
+    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
+    exit 1
+  end
+  #Datenbank nicht gefunden
+  if e.error.start_with? "Unknown database"
+    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
+    exit 1
+  end
+end
