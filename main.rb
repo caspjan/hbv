@@ -3,12 +3,6 @@ require_relative 'require'
 
 class Main
   def initialize
-    einst_pars = Einstellung_Parser.new '/home/jan/Dokumente/Programmierzeug/Hoerbuch/hoerbuch.conf'
-    @einst = einst_pars.einst
-    
-    @verw = Verwaltung.new @einst
-    @ausg = Ausgabe.new @einst
-    
     @args = Slop.parse { |o|
     o.string '-a', '--author', 'the author to search for'
     o.string '-s', '--speaker', 'the speaker to search for'
@@ -31,6 +25,26 @@ class Main
     o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, second is the new title.'
     o.array '-up', '--update-path', 'update the path of audiobook. First argument is the id of audiobook, second is the new path. All new files are parsed.'
     } 
+    
+    einst_pars = Einstellung_Parser.new '/home/jan/Dokumente/Programmierzeug/Hoerbuch/hoerbuch.conf'
+    @einst = einst_pars.einst
+    
+    if @args[:'init-db']
+      begin
+        dbc = DB_Creator.new @einst
+        dbc.create_db
+        dbc.create_tables
+        puts "done."
+      rescue Mysql::Error => e
+        if e.errno == 1044
+          puts "Zugriff für User " + @einst.user + " verweigert."
+          exit 1
+        end
+      end
+    end
+    
+    @verw = Verwaltung.new @einst
+    @ausg = Ausgabe.new @einst
     
     def sure?
       if @args[:force]
@@ -67,6 +81,8 @@ class Main
         return nil
       end
     end
+    
+   
     
     if @args[:ua]
       #checken, ob das array die richtige laenge hat
@@ -151,11 +167,6 @@ class Main
     
     if @args[:stats]
       @ausg.stats_aus @verw.get_stats
-    end
-    
-    if @args[:'init-db']
-      @verw.init_db
-      puts "done."
     end
     
     if @args[:fd]
@@ -246,11 +257,13 @@ rescue Mysql::Error => e
   #connection refused
   if e.errno == 111
     puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
-    exit 1
+  #keine rechte
+  elsif e.errno == 1044
+    puts "Zugriff für User " + @einst.user + " verweigert"
   end
   #Datenbank nicht gefunden
   if e.error.start_with? "Unknown database"
     puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
-    exit 1
   end
+  exit 1
 end
