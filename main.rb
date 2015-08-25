@@ -80,9 +80,7 @@ class Main
       else
         return nil
       end
-    end
-    
-   
+    end 
     
     if @args[:ua]
       #checken, ob das array die richtige laenge hat
@@ -255,7 +253,7 @@ begin
   Main.new
 rescue Mysql::Error => e
   #connection refused
-  if e.errno == 111
+  if e.errno == 2002
     puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
   #keine rechte
   elsif e.errno == 1044
