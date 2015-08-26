@@ -8,7 +8,7 @@ class Verwaltung
   
   def full_dump
     hbs = Array.new
-    calc_next_id('hoerbuecher').downto(0) {|e|
+    @dbcon.calc_next_id('hoerbuecher').downto(0) {|e|
       hb = get_hb e.to_s
       if !hb.nil?
         hbs << hb
@@ -59,9 +59,9 @@ class Verwaltung
   def get_dateien hb_id
     dateien = Array.new
     #alle ids aus zwischentabelle holen
-    res = @con.query 'SELECT * FROM dateien WHERE hoerbuch=' + hb_id.to_s + ';'
+    res = @dbcon.get_datei_zw_hb hb_id
     res.each_hash {|e|
-      datei = @con.query 'SELECT * FROM datei WHERE id=' + e['datei'] + ';'
+      datei = @dbcon.get_datei e['datei']
       hbd = Hoerbuch_Datei.new
       datei.each_hash {|f|
         hbd.id = f['id']
@@ -71,16 +71,16 @@ class Verwaltung
         hbd.groesse = f['groesse']
         hbd.nummer = f['nummer']
         #interpret holen
-        interpret_res = @con.query 'SELECT * FROM datei_interpret WHERE id=' + f['interpret'] + ';'
+        interpret_res = @dbcon.get_interpret f['interpret']
         interpret_res.each_hash {|g| hbd.interpret = g['interpret']}
         #album holen
-        album_res = @con.query 'SELECT * FROM datei_album WHERE id=' + f['album'] + ';'
+        album_res = @dbcon.get_album f['album']
         album_res.each_hash {|g| hbd.album = g['album']}
         #jahr holen
-        jahr_res = @con.query 'SELECT * FROM datei_jahr WHERE id=' + f['jahr'] + ';'
+        jahr_res = @dbcon.get_jahr f['jahr']
         jahr_res.each_hash {|g| hbd.jahr = g['jahr']}
         #genre holens
-        genre_res = @con.query 'SELECT * FROM datei_genre WHERE id=' + f['genre'] + ';'
+        genre_res = @dbcon.get_genre f['genre']
         genre_res.each_hash {|g| hbd.genre = g['genre']}
         dateien << hbd
       }
@@ -91,38 +91,13 @@ class Verwaltung
   def suche_bewertung bw
     hbs = Array.new
     #bewertung in der tabelle bewertung suchen
-    result = @con.query "SELECT * FROM bewertung WHERE bewertung=" + bw.to_s + ";"
+    res = @dbcon.get_bewertung bw
     #über die titel iterieren
-    result.each_hash {|row|
+    res.each_hash {|row|
       #alle hörbücher mit dem titel suchen
-      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE bewertung=" + row['id'] + ";"
+      hoerbuch_res = @dbcon.get_hb_bw_id row['id']
       hoerbuch_res.each_hash {|f|
-        titel_res = @con.query "SELECT * FROM titel WHERE id=" + f['titel'] + ";"
-        titel = ""
-        titel_res.each_hash {|e| titel << e['titel']}
-        #in der zwischentabelle nach allen autoren mit dem hoerbuch suchen
-        autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + f['id'] + ";"
-        autor = Array.new
-        autoren.each_hash {|e|
-          #in der tabelle autor nach den autoren mit der id suchen
-          autor_res = @con.query "SELECT * FROM autor WHERE id=" + e['autor'] + ";"
-          autor_res.each_hash {|g| autor << g['autor']}
-        }
-        #in der zwischentabelle nach allen sprechern mit dem hoerbuch suchen
-        sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + f['id'] + ";"
-        sprecher = Array.new
-        sprechers.each_hash {|e|
-          #in der tabelle sprecher nach den sprechern mit der id suchen
-          sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + e['sprecher'] + ";"
-          sprecher_res.each_hash {|g| sprecher << g['sprecher']}
-        }
-        pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + f['pfad'] + ";"
-        pfad = ""
-        pfad_res.each_hash {|e| pfad << e['pfad']}
-        bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + f['bewertung'] + ";"
-        bw = 0
-        bw_res.each_hash {|i| bw = i['bewertung']}
-        hb = Hoerbuch.new row['id'], titel, autor, sprecher, pfad, bw
+        hb = get_hb f['id']
         hbs << hb
       }
     }
@@ -141,55 +116,23 @@ class Verwaltung
       sprecher_zw.each_hash {|f|
           hb = get_hb f['hoerbuch']
           hbs << hb
-          puts hb
         }
       }
-    #}
     return hbs
   end
   
   def suche_autor autor
     hbs = Array.new
     #Aus der Tabelle sprecher den Autor suchen und das resultat in array speichern
-    autoren = @con.query "SELECT * FROM autor WHERE autor LIKE '%" + autor + "%';"
+    autoren = @dbcon.suche_autor autor
     #über das Array iterieren und in der tabelle autoren die ids der hoerbucher rausholen, zu denen die autoren gehören
     autoren.each_hash {|e|
       #Die Hoerbuecher zu den Autoren bestimmen
-      autoren_zw = @con.query "SELECT * FROM autoren WHERE autor=" + e['id'] + ";"
+      autoren_zw = @dbcon.get_autor_zw_autor e['id']
       #über die sprecher iterieren und die hoerbuch id bestimmen
       autoren_zw.each_hash {|f|
-        hoerbuecher = @con.query "SELECT * FROM hoerbuecher WHERE id=" + f['hoerbuch'] + ";"
-        #über die hoerbuecher iterieren und den rest bestimmen
-        hoerbuecher.each_hash {|g|
-          #in der zwischentabelle für autoren nach der id des Hoerbuchs suchen
-          autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + g['id'] + ";"
-          #über die autoren iterieren und den namen in array Speichern
-          autor = Array.new
-          autoren.each_hash {|h|
-            autor_res = @con.query "SELECT * FROM autor WHERE id=" + h['autor'] + ";"
-            #autoren in array speichern
-            autor_res.each_hash {|i| autor << i['autor']}
-          }
-          #in der zwischentabelle für sprecher nach der id des Hoerbuchs suchen
-          sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + g['id'] + ";"
-          sprecher = Array.new
-          sprechers.each_hash {|h|
-            sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + h['sprecher'] + ";"
-            #sprecher in array speichern
-            sprecher_res.each_hash {|i| sprecher << i['sprecher']}
-          }
-          titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
-          titel = ""
-          titel_res.each_hash {|i| titel << i['titel']}
-          bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + g['bewertung'] + ";"
-          bw = 0
-          bw_res.each_hash {|i| bw = i['bewertung']}
-          pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
-          pfad = ""
-          pfad_res.each_hash {|i| pfad << i['pfad']}
-          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad, bw
-          hbs << hb
-        }
+        hb = get_hb f['hoerbuch']
+        hbs << hb
       }
     }
     return hbs
@@ -198,38 +141,13 @@ class Verwaltung
   def suche_titel titel
     hbs = Array.new
     #titel in der tabelle titel suchen
-    result = @con.query "SELECT * FROM titel WHERE titel LIKE '%" + titel + "%';"
+    result = @dbcon.suche_titel titel
     #über die titel iterieren
-    result.each_hash {|row|
+    result.each_hash {|g|
       #alle hörbücher mit dem titel suchen
-      hoerbuch_res = @con.query "SELECT * FROM hoerbuecher WHERE titel=" + row['id'] + ";"
+      hoerbuch_res = @dbcon.get_hb_titel_id g['id']
       hoerbuch_res.each_hash {|f|
-        titel_res = @con.query "SELECT * FROM titel WHERE id=" + f['titel'] + ";"
-        titel = ""
-        titel_res.each_hash {|e| titel << e['titel']}
-        #in der zwischentabelle nach allen autoren mit dem hoerbuch suchen
-        autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + f['id'] + ";"
-        autor = Array.new
-        autoren.each_hash {|e|
-          #in der tabelle autor nach den autoren mit der id suchen
-          autor_res = @con.query "SELECT * FROM autor WHERE id=" + e['autor'] + ";"
-          autor_res.each_hash {|g| autor << g['autor']}
-        }
-        #in der zwischentabelle nach allen sprechern mit dem hoerbuch suchen
-        sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + f['id'] + ";"
-        sprecher = Array.new
-        sprechers.each_hash {|e|
-          #in der tabelle sprecher nach den sprechern mit der id suchen
-          sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + e['sprecher'] + ";"
-          sprecher_res.each_hash {|g| sprecher << g['sprecher']}
-        }
-        pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + f['pfad'] + ";"
-        pfad = ""
-        pfad_res.each_hash {|e| pfad << e['pfad']}
-        bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + f['bewertung'] + ";"
-        bw = 0
-        bw_res.each_hash {|i| bw = i['bewertung']}
-        hb = Hoerbuch.new row['id'], titel, autor, sprecher, pfad, bw
+        hb = get_hb f['id']
         hbs << hb
       }
     }
@@ -242,7 +160,7 @@ class Verwaltung
   
   def hoerbuch_einfuegen hb
     #id des neuen hoerbuchs bestimmen
-    new_id = calc_next_id "hoerbuecher"
+    new_id = @dbcon.calc_next_id "hoerbuecher"
     #über die autoren des hörbuchs iterieren
     autor_ids = Array.new
     hb.autor.each {|e|
@@ -296,7 +214,7 @@ class Verwaltung
     #pfad neu anlegen
     pst = @con.prepare 'INSERT INTO pfad(pfad) VALUES(?)'
     pst.execute hb.pfad
-    pfad_id = calc_next_id('pfad') - 1
+    pfad_id = @dbcon.calc_next_id('pfad') - 1
     
     #hörbuch anlegen
     pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad, bewertung) VALUES(?, ?, ?)'
@@ -309,7 +227,7 @@ class Verwaltung
       #metakram von datei holen
       dm = Datei_Meta_Parser.new e, i+1
       #dateien in die datenbank schreiben
-      datei_next_id = calc_next_id "datei"
+      datei_next_id = @dbcon.calc_next_id "datei"
       datei_einfuegen dm.parse
       #verknüpfunge von hoerbuch und datei in die datenbank tun
       datei_verkn_einfuegen datei_next_id, new_id
@@ -357,162 +275,155 @@ class Verwaltung
     pst.execute datei.pfad.expand_path.to_s, datei.titel.to_s, datei.laenge.to_i, datei.groesse.to_i, datei.nummer.to_i, album_id.to_i, interpret_id.to_i, jahr_id.to_i, genre_id.to_i
   end
   
-  def clean_autoren
-    #alle autoren einlesen
-    autoren = @con.query 'SELECT * FROM autor'
-    autoren.each_hash {|e|
-      kommt_vor = false
-      #überprüfen, ob die id des autors in der zwischentabelle steht
-      verkn = @con.query 'SELECT * FROM autoren WHERE autor=' + e['id'] + ';'
-      verkn.each {|f| kommt_vor = true}
-      #wenn nicht, loschen
-      if !kommt_vor
-        #autor löschen
-        @con.query 'DELETE FROM autor WHERE id=' + e['id'] + ';'
-      end
-    }
-  end
+  #def clean_autoren
+  #  #alle autoren einlesen
+  #  autoren = @con.query 'SELECT * FROM autor'
+  #  autoren.each_hash {|e|
+  #    kommt_vor = false
+  #    #überprüfen, ob die id des autors in der zwischentabelle steht
+  #    verkn = @con.query 'SELECT * FROM autoren WHERE autor=' + e['id'] + ';'
+  #    verkn.each {|f| kommt_vor = true}
+  #    #wenn nicht, loschen
+  #    if !kommt_vor
+  #      #autor löschen
+  #      @con.query 'DELETE FROM autor WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
   
-  def clean_sprecher
-    #alle sprecher einlesen
-    sprecher = @con.query 'SELECT * FROM sprecher'
-    sprecher.each_hash {|e|
-      kommt_vor = false
-      #überprüfen, ob die id des sprechers in der zwischentabelle steht
-      verkn = @con.query 'SELECT * FROM sprechers WHERE sprecher=' + e['id'] + ';'
-      verkn.each {|f| kommt_vor = true}
-      #wenn nicht, loschen
-      if !kommt_vor
-        #sprecher löschen
-        @con.query 'DELETE FROM sprecher WHERE id=' + e['id'] + ';'
-      end
-    }
-  end
+  #def clean_sprecher
+  #  #alle sprecher einlesen
+  #  sprecher = @con.query 'SELECT * FROM sprecher'
+  #  sprecher.each_hash {|e|
+  #    kommt_vor = false
+  #    #überprüfen, ob die id des sprechers in der zwischentabelle steht
+  #    verkn = @con.query 'SELECT * FROM sprechers WHERE sprecher=' + e['id'] + ';'
+  #    verkn.each {|f| kommt_vor = true}
+  #    #wenn nicht, loschen
+  #    if !kommt_vor
+  #      #sprecher löschen
+  #      @con.query 'DELETE FROM sprecher WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
   
-  def clean_datei_interpreten
-    #alle interpreten einlesen
-    interpreten = @con.query 'SELECT * FROM datei_interpret'
-    interpreten.each_hash {|e|
-      kommt_vor = false
-      #überprüfen, ob die id des interpreten in der tabelle datei steht
-      datei = @con.query 'SELECT * FROM datei WHERE interpret=' + e['id'] + ';'
-      datei.each {|f| kommt_vor = true}
-      #wenn nicht, loschen
-      if !kommt_vor
-        #sprecher löschen
-        @con.query 'DELETE FROM datei_interpret WHERE id=' + e['id'] + ';'
-      end
-    }
-  end
+  #def clean_datei_interpreten
+  #  #alle interpreten einlesen
+  #  interpreten = @con.query 'SELECT * FROM datei_interpret'
+  #  interpreten.each_hash {|e|
+  #    kommt_vor = false
+  #    #überprüfen, ob die id des interpreten in der tabelle datei steht
+  #    datei = @con.query 'SELECT * FROM datei WHERE interpret=' + e['id'] + ';'
+  #    datei.each {|f| kommt_vor = true}
+  #    #wenn nicht, loschen
+  #    if !kommt_vor
+  #      #sprecher löschen
+  #      @con.query 'DELETE FROM datei_interpret WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
+  #
+  #def clean_datei_alben
+  #  #alle alben einlesen
+  #  alben = @con.query 'SELECT * FROM datei_album'
+  #  alben.each_hash {|e|
+  #    kommt_vor = false
+  #    #überprüfen, ob die id des album in der tabelle datei steht
+  #    datei = @con.query 'SELECT * FROM datei WHERE album=' + e['id'] + ';'
+  #    datei.each {|f| kommt_vor = true}
+  #    #wenn nicht, loschen
+  #    if !kommt_vor
+  #      #sprecher löschen
+  #      @con.query 'DELETE FROM datei_album WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
+  #
+  #def clean_datei_genres
+  #  #alle genres einlesen
+  #  genres = @con.query 'SELECT * FROM datei_genre'
+  #  genres.each_hash {|e|
+  #    kommt_vor = false
+  #    #überprüfen, ob die id des interpreten in der tabelle datei steht
+  #    datei = @con.query 'SELECT * FROM datei WHERE genre=' + e['id'] + ';'
+  #    datei.each {|f| kommt_vor = true}
+  #    #wenn nicht, loschen
+  #    if !kommt_vor
+  #      #sprecher löschen
+  #      @con.query 'DELETE FROM datei_genre WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
+  #
+  #def clean_datei_jahr
+  #  #alle jahre einlesen
+  #  jahr = @con.query 'SELECT * FROM datei_jahr'
+  #  jahr.each_hash {|e|
+  #    kommt_vor = false
+  #    #überprüfen, ob die id des interpreten in der tabelle datei steht
+  #    datei = @con.query 'SELECT * FROM datei WHERE jahr=' + e['id'] + ';'
+  #    datei.each {|f| kommt_vor = true}
+  #    #wenn nicht, loschen
+  #    if !kommt_vor
+  #      #sprecher löschen
+  #      @con.query 'DELETE FROM datei_jahr WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
   
-  def clean_datei_alben
-    #alle alben einlesen
-    alben = @con.query 'SELECT * FROM datei_album'
-    alben.each_hash {|e|
-      kommt_vor = false
-      #überprüfen, ob die id des album in der tabelle datei steht
-      datei = @con.query 'SELECT * FROM datei WHERE album=' + e['id'] + ';'
-      datei.each {|f| kommt_vor = true}
-      #wenn nicht, loschen
-      if !kommt_vor
-        #sprecher löschen
-        @con.query 'DELETE FROM datei_album WHERE id=' + e['id'] + ';'
-      end
-    }
-  end
-  
-  def clean_datei_genres
-    #alle genres einlesen
-    genres = @con.query 'SELECT * FROM datei_genre'
-    genres.each_hash {|e|
-      kommt_vor = false
-      #überprüfen, ob die id des interpreten in der tabelle datei steht
-      datei = @con.query 'SELECT * FROM datei WHERE genre=' + e['id'] + ';'
-      datei.each {|f| kommt_vor = true}
-      #wenn nicht, loschen
-      if !kommt_vor
-        #sprecher löschen
-        @con.query 'DELETE FROM datei_genre WHERE id=' + e['id'] + ';'
-      end
-    }
-  end
-  
-  def clean_datei_jahr
-    #alle jahre einlesen
-    jahr = @con.query 'SELECT * FROM datei_jahr'
-    jahr.each_hash {|e|
-      kommt_vor = false
-      #überprüfen, ob die id des interpreten in der tabelle datei steht
-      datei = @con.query 'SELECT * FROM datei WHERE jahr=' + e['id'] + ';'
-      datei.each {|f| kommt_vor = true}
-      #wenn nicht, loschen
-      if !kommt_vor
-        #sprecher löschen
-        @con.query 'DELETE FROM datei_jahr WHERE id=' + e['id'] + ';'
-      end
-    }
-  end
-  
-  def clean_bewertung
-    bw_res = @con.query 'SELECT * FROM bewertung'
-    bw_res.each_hash {|e|
-      gibt = false
-      hb_res = @con.query 'SELECT *FROM hoerbuecher WHERE id=' + e['id'] + ';'
-      hb_res.each {|f|
-        gibt = true
-      }
-      @con.query 'DELETE FROM bewertung WHERE id=' + e['id'] + ';' if !gibt
-    }
-  end
+  #def clean_bewertung
+  #  bw_res = @con.query 'SELECT * FROM bewertung'
+  #  bw_res.each_hash {|e|
+  #    gibt = false
+  #    hb_res = @con.query 'SELECT *FROM hoerbuecher WHERE id=' + e['id'] + ';'
+  #    hb_res.each {|f|
+  #      gibt = true
+  #    }
+  #    @con.query 'DELETE FROM bewertung WHERE id=' + e['id'] + ';' if !gibt
+  #  }
+  #end
   
   def hoerbuch_loeschen hb
     #id des pfades holen und loeschen
-    hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + hb.id + ';'
+    hb_res = @dbcon.get_hb_id hb.id
     hb_res.each_hash {|e|
       #pfad loeschen
-      @con.query 'DELETE FROM pfad WHERE id=' + e['pfad'] + ';'
+      @dbcon.remove_path e['pfad']
       #titel loeschen
-      @con.query 'DELETE FROM titel WHERE id=' + e['titel'] + ';'
+      @dbcon.remove_title e['titel']
       #verknüpfungen des autors aus zwischentabelle loeschen
-      @con.query 'DELETE FROM autoren WHERE hoerbuch=' + e['id'] + ';'
+      @dbcon.remove_zw_hb e['id'], 'autoren'
       #verknüpfungen des sprechers aus zwischentabelle loeschen
-      @con.query 'DELETE FROM sprechers WHERE hoerbuch=' + e['id'] + ';'
+      @dbcon.remove_zw_hb e['id'], 'sprechers'
       #checken, ob es autoren ohne hoerbuch gibt
-      clean_autoren
+      @dbcon.clean_zw_table 'autor'
       #checken, ob es sprecher ohne hoerbuch gibt
-      clean_sprecher
+      @dbcon.clean_zw_table 'sprecher'
       #checken, ob es bewertungen ohne hoerbuch gibt
-      clean_bewertung
+      @dbcon.clean_bewertung
       #hoerbuch loeschen
-      @con.query 'DELETE FROM hoerbuecher WHERE id=' + hb.id + ';'
+      @dbcon.remove_hb_id hb.id
       #alle dateien des albums loeschen
       dateien = get_dateien hb.id
       dateien.each {|f|
         datei_loeschen f.id
       }
       #alle verknüpfungen zum hoerbuch loschen
-      @con.query 'DELETE FROM dateien WHERE hoerbuch=' + hb.id + ';'
+      @dbcon.remove_zw_hb hb.id, 'dateien'
     }
   end
   
   def datei_loeschen id
     #datei loeschen
-    @con.query 'DELETE FROM datei WHERE id=' + id + ';'
+    @dbcon.remove_file id
     #checken, ob es interpreten ohne datei gibt
-    clean_datei_interpreten
+    @dbcon.clean_file_table 'datei_interpreten'
     #checken, ob es alben ohne datei gibt
-    clean_datei_alben
+    @dbcon.clean_file_table 'datei_album'
     #checken, ob es genres ohne datei gibt
-    clean_datei_genres
+    @dbcon.clean_file_table 'datei_genre'
     #checken, ob es jahre ohne datei gibt
-    clean_datei_jahr
-  end
-  
-  def calc_next_id tabelle
-    res = @con.query 'SHOW TABLE STATUS FROM ' + @einst.db + ' WHERE Name="' + tabelle + '";'
-    id = 0
-    res.each_hash {|e| id = e['Auto_increment'].to_i}
-    return id
+    @dbcon.clean_file_table 'datei_jahr'
   end
   
   def get_hb_size hb_dateien
