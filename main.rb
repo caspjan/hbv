@@ -196,17 +196,17 @@ class Main
     
     if @args[:author]
       res = @verw.suche_autor @args[:author]
-      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id) }
+      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id) }
     end
     
     if @args[:title]
       res = @verw.suche_titel @args[:title]
-      res.each {|e| @ausg.aus e, files?(e.id), size(e.id)}
+      res.each {|e| @ausg.aus e, files?(e.id), size(e.id), laenge?(e.id)}
     end
     
     if @args[:speaker]
       res = @verw.suche_sprecher @args[:speaker]
-      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id) }
+      res.each {|f| @ausg.aus f, files?(f.id), size?(f.id), laenge?(f.id) }
     end
     
     if @args[:rating]

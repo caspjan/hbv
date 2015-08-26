@@ -18,7 +18,7 @@ class Verwaltung
   end
   
   def get_hb id
-    hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + id + ';'
+    hb_res = @dbcon.get_hb_id id
     pfad = ""
     titel = ""
     autor = Array.new
@@ -28,24 +28,24 @@ class Verwaltung
     hb_res.each_hash {|e|
       gibt = true
       #titel holen
-      titel_res = @con.query 'SELECT * FROM titel WHERE id=' + e['titel'] + ';'
+      titel_res = @dbcon.get_titel_id e['titel']
       titel_res.each_hash {|f| titel = f['titel']}
-      bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + e['bewertung'] + ";"
+      bw_res = @dbcon.get_bewertung_id e['bewertung']
       bw_res.each_hash {|i| bw = i['bewertung']}
       #pfad holen
-      pfad_res = @con.query 'SELECT * FROM pfad WHERE id=' + e['pfad'] + ';'
+      pfad_res = @dbcon.get_pfad_id e['pfad']
       pfad_res.each_hash {|f| pfad = f['pfad']}
       #autoren aus zwischentabelle holen
-      autoren_res = @con.query 'SELECT * FROM autoren WHERE hoerbuch=' + e['id'] + ';'
+      autoren_res = @dbcon.get_autor_zw_hb e['id']
       autoren_res.each_hash {|f|
-        autor_res = @con.query 'SELECT *FROM autor WHERE id=' + f['autor'] + ';'
+        autor_res = @dbcon.get_autor_id f['autor']
         autor_res.each_hash {|g| autor << g['autor'] }
       }
       #sprecher aus zwischentabelle holen
-      sprechers_res = @con.query 'SELECT * FROM sprechers WHERE hoerbuch=' + e['id'] + ';'
+      sprechers_res = @dbcon.get_sprecher_zw_hb e['id']
       sprechers_res.each_hash {|f|
         #sprecher aus sprecher tabelle holen
-        sprecher_res = @con.query 'SELECT * FROM sprecher WHERE id=' + f['sprecher'] + ';'
+        sprecher_res = @dbcon.get_sprecher_id f['sprecher']
         sprecher_res.each_hash {|g| sprecher << g['sprecher']}
       }
     }
@@ -132,47 +132,19 @@ class Verwaltung
   def suche_sprecher sprecher
     hbs = Array.new
     #Aus der Tabelle sprecher den Sprecher suchen und das resultat in array speichern
-    sprecher = @con.query "SELECT * FROM sprecher WHERE sprecher LIKE '%" + sprecher + "%';"
+    sprecher = @dbcon.suche_sprecher sprecher
     #über das Array iterieren und in der tabelle sprechers die ids der hoerbucher rausholen, zu denen die sprecher gehören
     sprecher.each_hash {|e|
       #Die Hoerbuecher zu den Sprechern bestimmen
-      sprecher_zw = @con.query "SELECT * FROM sprechers WHERE sprecher=" + e['id'] + ";"
+      sprecher_zw = @dbcon.get_sprecher_zw_sprecher e['id']
       #über die sprecher iterieren und die hoerbuch id bestimmen
       sprecher_zw.each_hash {|f|
-        hoerbuecher = @con.query "SELECT * FROM hoerbuecher WHERE id=" + f['hoerbuch'] + ";"
-        #über die hoerbuecher iterieren und den rest bestimmen
-        hoerbuecher.each_hash {|g|
-          #in der zwischentabelle für autoren nach der id des Hoerbuchs suchen
-          autoren = @con.query "SELECT * FROM autoren WHERE hoerbuch=" + g['id'] + ";"
-          #über die autoren iterieren und den namen in array Speichern
-          autor = Array.new
-          autoren.each_hash {|h|
-            autor_res = @con.query "SELECT * FROM autor WHERE id=" + h['autor'] + ";"
-            #autoren in array speichern
-            autor_res.each_hash {|i| autor << i['autor']}
-          }
-          #in der zwischentabelle für sprecher nach der id des Hoerbuchs suchen
-          sprechers = @con.query "SELECT * FROM sprechers WHERE hoerbuch=" + g['id'] + ";"
-          sprecher = Array.new
-          sprechers.each_hash {|h|
-            sprecher_res = @con.query "SELECT * FROM sprecher WHERE id=" + h['sprecher'] + ";"
-            #sprecher in array speichern
-            sprecher_res.each_hash {|i| sprecher << i['sprecher']}
-          }
-          titel_res = @con.query "SELECT * FROM titel WHERE id=" + g['titel'] + ";"
-          titel = ""
-          titel_res.each_hash {|i| titel << i['titel']}
-          bw_res = @con.query "SELECT * FROM bewertung WHERE id=" + g['bewertung'] + ";"
-          bw = 0
-          bw_res.each_hash {|i| bw = i['bewertung']}
-          pfad_res = @con.query "SELECT * FROM pfad WHERE id=" + g['pfad'] + ";"
-          pfad = ""
-          pfad_res.each_hash {|i| pfad << i['pfad']}
-          hb = Hoerbuch.new g['id'], titel, autor, sprecher, pfad, bw
+          hb = get_hb f['hoerbuch']
           hbs << hb
+          puts hb
         }
       }
-    }
+    #}
     return hbs
   end
   
@@ -265,31 +237,7 @@ class Verwaltung
   end
     
   def clear_tables
-    @con.query 'TRUNCATE datei'
-    @con.query 'TRUNCATE dateien'
-    @con.query 'TRUNCATE datei_interpret'
-    @con.query 'TRUNCATE datei_jahr'
-    @con.query 'TRUNCATE datei_genre'
-    @con.query 'TRUNCATE datei_album'
-    @con.query 'TRUNCATE hoerbuecher'
-    @con.query 'TRUNCATE titel'
-    @con.query 'TRUNCATE autor'
-    @con.query 'TRUNCATE autoren'
-    @con.query 'TRUNCATE pfad'
-    @con.query 'TRUNCATE sprecher'
-    @con.query 'TRUNCATE sprechers'
-    @con.query 'TRUNCATE bewertung'
-  end
-  
-  def gibt_wert? tabelle, spalte, wert
-    result = @con.query "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
-    id = -1
-    result.each_hash {|e| id = e['id']}
-    if id == -1
-        return false
-    else
-      return id
-    end
+    @dbcon.clear_tables
   end
   
   def hoerbuch_einfuegen hb
@@ -299,12 +247,12 @@ class Verwaltung
     autor_ids = Array.new
     hb.autor.each {|e|
       #für jeden autor schauen, ob er schon existiert
-      if !gibt_wert? "autor", "autor", e
+      if !@dbcon.gibt_wert? "autor", "autor", e
         pst = @con.prepare 'INSERT INTO autor(autor) VALUES(?)'
         pst.execute e
-        autor_ids << gibt_wert?("autor", "autor", e)
+        autor_ids << @dbcon.gibt_wert?("autor", "autor", e)
       else
-        autor_ids << gibt_wert?("autor", "autor", e)
+        autor_ids << @dbcon.gibt_wert?("autor", "autor", e)
       end
     }
     #verknüpfung für jeden autor in autor_ids in der zwischentabelle erstellen
@@ -317,12 +265,12 @@ class Verwaltung
     sprecher_ids = Array.new
     hb.sprecher.each {|e|
       #für jeden sprecher schauen, ob er schon existiert
-      if !gibt_wert? "sprecher", "sprecher", e
+      if !@dbcon.gibt_wert? "sprecher", "sprecher", e
         pst = @con.prepare 'INSERT INTO sprecher(sprecher) VALUES(?)'
         pst.execute e
-        sprecher_ids << gibt_wert?("sprecher", "sprecher", e)
+        sprecher_ids << @dbcon.gibt_wert?("sprecher", "sprecher", e)
       else
-        sprecher_ids << gibt_wert?("sprecher", "sprecher", e)
+        sprecher_ids << @dbcon.gibt_wert?("sprecher", "sprecher", e)
       end
     }
     #verknüpfung für jeden sprecher in sprecher_ids in der zwischentabelle erstellen
@@ -332,18 +280,18 @@ class Verwaltung
     }
     
     #wenn der titel noch nicht existiert, neu anlegen
-    if !gibt_wert? "titel", "titel", hb.titel
+    if !@dbcon.gibt_wert? "titel", "titel", hb.titel
       pst = @con.prepare 'INSERT INTO titel(titel) VALUES(?)'
       pst.execute hb.titel
     end
-    titel_id = gibt_wert? "titel", "titel", hb.titel
+    titel_id = @dbcon.gibt_wert? "titel", "titel", hb.titel
     
     #wenn die bewertung noch nicht existiert, neu anlegen
-    if !gibt_wert? "bewertung", "bewertung", hb.bewertung
+    if !@dbcon.gibt_wert? "bewertung", "bewertung", hb.bewertung
       pst = @con.prepare 'INSERT INTO bewertung(bewertung) VALUES(?)'
       pst.execute hb.bewertung
     end
-    bewertung_id = gibt_wert? "bewertung", "bewertung", hb.bewertung
+    bewertung_id = @dbcon.gibt_wert? "bewertung", "bewertung", hb.bewertung
     
     #pfad neu anlegen
     pst = @con.prepare 'INSERT INTO pfad(pfad) VALUES(?)'
@@ -377,32 +325,32 @@ class Verwaltung
   
   def datei_einfuegen datei
     #schauen, ob es den interpreten schon gibt
-    if !gibt_wert? "datei_interpret", "interpret", datei.interpret
+    if !@dbcon.gibt_wert? "datei_interpret", "interpret", datei.interpret
       pst = @con.prepare 'INSERT INTO datei_interpret(interpret) VALUES(?)'
       pst.execute datei.interpret
     end
-    interpret_id = gibt_wert? "datei_interpret", "interpret", datei.interpret
+    interpret_id = @dbcon.gibt_wert? "datei_interpret", "interpret", datei.interpret
     
     #schauen, ob es das genre schon gibt
-    if !gibt_wert? "datei_genre", "genre", datei.genre
+    if !@dbcon.gibt_wert? "datei_genre", "genre", datei.genre
       pst = @con.prepare 'INSERT INTO datei_genre(genre) VALUES(?)'
       pst.execute datei.genre
     end
-    genre_id = gibt_wert? "datei_genre", "genre", datei.genre
+    genre_id = @dbcon.gibt_wert? "datei_genre", "genre", datei.genre
     
     #schauen, ob es das Jahr schon gibt
-    if !gibt_wert? "datei_jahr", "jahr", datei.jahr
+    if !@dbcon.gibt_wert? "datei_jahr", "jahr", datei.jahr
       pst = @con.prepare 'INSERT INTO datei_jahr(jahr) VALUES(?)'
       pst.execute datei.jahr
     end
-    jahr_id = gibt_wert? "datei_jahr", "jahr", datei.jahr
+    jahr_id = @dbcon.gibt_wert? "datei_jahr", "jahr", datei.jahr
     
     #schauen, ob es das album schon gibt
-    if !gibt_wert? "datei_album", "album", datei.album
+    if !@dbcon.gibt_wert? "datei_album", "album", datei.album
       pst = @con.prepare 'INSERT INTO datei_album(album) VALUES(?)'
       pst.execute datei.album
     end
-    album_id = gibt_wert? "datei_album", "album", datei.album
+    album_id = @dbcon.gibt_wert? "datei_album", "album", datei.album
     
     #feste sachen einfuegen
     pst = @con.prepare 'INSERT INTO datei(pfad, titel, laenge, groesse, nummer, album, interpret, jahr, genre) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -622,7 +570,7 @@ class Verwaltung
      
       @con.query 'UPDATE ' + spalte + ' SET ' + spalte + '="' + wert_neu + '" WHERE ' + spalte + '="' + wert_alt + '";'
       #neue id in hoerbuch tabelle schreiben
-      id = gibt_wert? spalte, spalte, wert_neu
+      id = @dbcon.gibt_wert? spalte, spalte, wert_neu
       @con.query 'UPDATE hoerbuecher SET ' + spalte + '=' + id + ' WHERE id=' + hb_id + ";"
       #beim pfad alle dateien neu einlesen
       if spalte.eql? 'pfad'
@@ -637,7 +585,7 @@ class Verwaltung
       #schauen, ob es den neuen autor/sprecher gibt
       tabelle = "autoren" if spalte.eql? "autor"
       tabelle = "sprechers" if spalte.eql? "sprecher"
-      id = gibt_wert? spalte, spalte, wert_neu
+      id = @dbcon.gibt_wert? spalte, spalte, wert_neu
       if id
         #verweis in zwischentabelle ändern
         @con.query 'UPDATE ' + tabelle + ' SET ' + spalte + "='" + wert_neu + "' WHERE hoerbuch=" + hb_id + " and " + spalte + "=" + id + ';'
@@ -647,7 +595,7 @@ class Verwaltung
           pst = @con.prepare 'INSERT INTO ' + spalte + '(' + spalte + ') VALUES(?)'
           pst.execute e
           #verweis(e) in zwischentabelle ändern
-          id = gibt_wert? spalte, spalte, e
+          id = @dbcon.gibt_wert? spalte, spalte, e
           #id des alten wertes ermitteln
           wert_alt.each {|g| 
             res = @con.query 'SELECT * FROM ' + spalte + ' WHERE ' + spalte + '="' + g + '";'
