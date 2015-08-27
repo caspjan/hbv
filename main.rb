@@ -89,14 +89,18 @@ class Main
         #altes Hoerbuch ausgeben
         id = ua[0]
         hb = @verw.get_hb id
-        puts 'Altes Hoerbuch:'
-        @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        hb_new = hb.clone
-        hb_new.autor = Array.new << ua[1]
-        puts 'Neues Hoerbuch:'
-        @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        if sure?
-          @verw.change id, 'autor', hb_new.autor, hb.autor
+        if !hb.nil?
+          puts 'Altes Hoerbuch:'
+          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          hb_new = hb.clone
+          hb_new.autor = Array.new << ua[1]
+          puts 'Neues Hoerbuch:'
+          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          if sure?
+            @verw.change id, 'autor', hb_new.autor, hb.autor
+          end
+        else
+          puts 'Nothing found.'
         end
       end
     end
@@ -108,14 +112,18 @@ class Main
         #altes Hoerbuch ausgeben
         id = ut[0]
         hb = @verw.get_hb id
-        puts 'Altes Hoerbuch:'
-        @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        hb_new = hb.clone
-        hb_new.titel = ut[1]
-        puts 'Neues Hoerbuch:'
-        @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        if sure?
-          @verw.change id, 'titel', hb_new.titel, hb.titel
+        if !hb.nil?
+          puts 'Altes Hoerbuch:'
+          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          hb_new = hb.clone
+          hb_new.titel = ut[1]
+          puts 'Neues Hoerbuch:'
+          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          if sure?
+            @verw.change id, 'titel', hb_new.titel, hb.titel
+          end
+        else
+          puts 'Nothing found.'
         end
       end
     end
@@ -129,14 +137,18 @@ class Main
           #altes Hoerbuch ausgeben
           id = up[0]
           hb = @verw.get_hb id
-          puts 'Altes Hoerbuch:'
-          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
-          hb_new = hb.clone
-          hb_new.pfad = up[1]
-          puts 'Neues Hoerbuch:'
-          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
-          if sure?
-            @verw.change id, 'pfad', hb_new.pfad, hb.pfad
+          if !hb.nil?
+            puts 'Altes Hoerbuch:'
+            @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+            hb_new = hb.clone
+            hb_new.pfad = up[1]
+            puts 'Neues Hoerbuch:'
+            @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+            if sure?
+              @verw.change id, 'pfad', hb_new.pfad, hb.pfad
+            end
+          else
+            puts 'Nothing found.'
           end
         else
           puts "Den Ordner gibts ned!"
@@ -151,14 +163,18 @@ class Main
         #altes Hoerbuch ausgeben
         id = us[0]
         hb = @verw.get_hb id
-        puts 'Altes Hoerbuch:'
-        @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        hb_new = hb.clone
-        hb_new.sprecher = Array.new << us[1]
-        puts 'Neues Hoerbuch:'
-        @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
-        if sure?
-          @verw.change id, 'sprecher', hb_new.sprecher, hb.sprecher
+        if !hb.nil?
+          puts 'Altes Hoerbuch:'
+          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          hb_new = hb.clone
+          hb_new.sprecher = Array.new << us[1]
+          puts 'Neues Hoerbuch:'
+          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          if sure?
+            @verw.change id, 'sprecher', hb_new.sprecher, hb.sprecher
+          end
+        else
+          puts 'Nothing found.'
         end
       end
     end
