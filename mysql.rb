@@ -72,6 +72,7 @@ class DBCon
   end
   
   def gibt_wert? tabelle, spalte, wert
+    puts "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
     result = @con.query "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
     id = -1
     result.each_hash {|e| id = e['id']}
@@ -171,7 +172,11 @@ class DBCon
       #wenn nicht, loschen
       if !exists
         #löschen
-        @con.query 'DELETE FROM ' + zw_table + ' WHERE id=' + s(e['id']) + ';'
+        #@con.query 'DELETE FROM ' + zw_table + ' WHERE id=' + s(e['id']) + ';'
+        @con.query 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
+        puts 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
+        @con.query 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
+        puts 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
       end
     }
   end
@@ -233,13 +238,14 @@ class DBCon
   end
   
   def update_zw table, col, val_new, val_old, hb_id
+    puts 'UPDATE ' + s(table) + ' SET ' + s(col) + "='" + s(val_new) + "' WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
     @con.query 'UPDATE ' + s(table) + ' SET ' + s(col) + "=" + s(val_new) + " WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
-    #puts 'UPDATE ' + s(table) + ' SET ' + s(col) + "='" + s(val_new) + "' WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
   end
   
   def ins table, col, val
     pst = @con.prepare 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(?)'
     pst.execute s(val)
+    puts 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(' + s(val) + ')'
   end
   
   def ins_zw table, col1, col2, val1, val2
@@ -268,5 +274,9 @@ class DBCon
   def ins_file_zw hb_id, file_id
     pst = @con.prepare 'INSERT INTO dateien(hoerbuch, datei) VALUES(?, ?)'
     pst.execute file_id, hb_id
+  end
+  
+  def get_all table
+    @con.query 'SELECT * FROM ' + table
   end
 end

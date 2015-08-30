@@ -20,6 +20,7 @@ class Main
     o.bool '--files', 'print all files of the audiobook'
     o.bool '--init-db', 'create all needed tables'
     o.bool '--stats', 'print stats'
+    o.bool '-ga', '--get-authors', 'print all authors and the number of audiobooks.'
     o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new author.'
     o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
     o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, second is the new title.'
@@ -81,6 +82,11 @@ class Main
         return nil
       end
     end 
+    
+    if @args[:ga]
+      puts @verw.get_autoren
+    end
+    
     
     if @args[:ua]
       #checken, ob das array die richtige laenge hat
@@ -262,20 +268,20 @@ class Main
     end
   end
 end
-begin
+#begin
   Main.new
-rescue Mysql::Error => e
-  #connection refused
-  if e.errno == 2002
-    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
-  #keine rechte
-  elsif e.errno == 1044
-    puts "Zugriff für User " + @einst.user + " verweigert"
-  end
-  #Datenbank nicht gefunden
-  if e.error.start_with? "Unknown database"
-    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
-  end
-  puts e
-  exit 1
-end
+#rescue Mysql::Error => e
+#  #connection refused
+#  if e.errno == 2002
+#    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
+#  #keine rechte
+#  elsif e.errno == 1044
+#    puts "Zugriff für User " + @einst.user + " verweigert"
+#  end
+#  #Datenbank nicht gefunden
+#  if e.error.start_with? "Unknown database"
+#    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
+#  end
+#  puts e
+#  exit 1
+#end

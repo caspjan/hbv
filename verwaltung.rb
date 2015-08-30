@@ -370,34 +370,66 @@ class Verwaltung
       end
     elsif spalte.eql? 'autor' or spalte.eql? 'sprecher'
       #schauen, ob es den neuen autor/sprecher gibt
-      tabelle = "autoren" if spalte.eql? "autor"
-      tabelle = "sprechers" if spalte.eql? "sprecher"
-      id = @dbcon.gibt_wert? spalte, spalte, wert_neu
-      if id
-        #verweis in zwischentabelle ändern
-        @dbcon.update_zw tabelle, spalte, wert_neu, id, hb_id
-      else
-        #autor/sprecher neu anlegen
-        wert_neu.each_with_index {|neu,i|
+      tabelle = 'autoren' if spalte.eql? 'autor'
+      tabelle = 'sprechers' if spalte.eql? 'sprecher'
+      wert_neu.each_with_index {|neu,i|
+        id = @dbcon.gibt_wert? spalte, spalte, neu
+        #wenns die schon gibt
+        puts id
+        if id
+          #verweis in zwischentabelle ändern
+          wert_alt.each {|e|  
+            id_alt = @dbcon.gibt_wert? spalte, spalte, e
+            puts id_alt
+            @dbcon.update_zw tabelle, spalte, id, id_alt, hb_id
+          }
+        else
+          #autor/sprecher neu anlegen
+          #wert_neu.each_with_index {|neu,i|
           @dbcon.ins spalte, spalte, neu
           #verweis(e) in zwischentabelle ändern
-          id_neu = @dbcon.gibt_wert? spalte, spalte, neu
+          id = @dbcon.gibt_wert? spalte, spalte, neu
+          puts id
           #id des alten wertes ermitteln
           wert_alt.each {|g| 
             res = @dbcon.get spalte, spalte, g
             j = 0
             res.each_hash {|alt|
               if j == i
-                @dbcon.update_zw tabelle, spalte, id_neu, alt['id'], hb_id
+                @dbcon.update_zw tabelle, spalte, id, alt['id'], hb_id
               end
               j += 1
             }
           }
-        }
-        #alten autor/sprecher löschen
-        #@dbcon.clean_zw_table 'autor'
-        #@dbcon.clean_zw_table 'sprecher'
-      end 
+          #}
+        end
+      }
+      #alten autor/sprecher löschen
+      @dbcon.clean_table 'autor'
+      @dbcon.clean_zw_table 'autor'
+      @dbcon.clean_table 'sprecher'
+      @dbcon.clean_zw_table 'sprecher'
+      #end 
     end
+  end
+  def get_autoren
+    autoren = Hash.new
+    #alle autoren holen
+    autoren_res = @dbcon.get_all 'autor'
+    autoren_res.each_hash {|aut|
+      autoren[aut['autor']] = 0
+      #anzahl der Hoerbuecher des Autors bestimmen
+      hbs = Array.new
+      #zwischentabelle holen
+      res = @dbcon.get_autor_zw_autor aut['id']
+      #id des hoerbuchs speichern
+      res.each_hash {|zw|
+        if !hbs.include? zw['hoerbuch']
+          hbs << zw['hoerbuch']
+          autoren[aut['autor']] += 1
+        end
+      }
+    }
+    return autoren
   end
 end
