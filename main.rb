@@ -204,7 +204,7 @@ class Main
     if @args[:id]
       res = @verw.get_hb @args[:id]
       if !res.nil?
-          @ausg.aus res, files?(@args[:id]), size?(@args[:id])
+          @ausg.aus res, files?(@args[:id]), size?(@args[:id]), laenge?(@args[:id])
       else
         puts "Nothing found."
       end
@@ -246,9 +246,6 @@ class Main
         e.rstrip!
         e.lstrip!
       }
-      ins.each {|e|
-        puts e
-      }
       if ins.length == 5
         if Pathname.new(ins[3]).exist?
           hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
@@ -279,5 +276,6 @@ rescue Mysql::Error => e
   if e.error.start_with? "Unknown database"
     puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
   end
+  puts e
   exit 1
 end

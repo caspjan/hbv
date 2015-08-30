@@ -19,7 +19,7 @@ class DBCon
   end
 
   def get_hbs
-    @con.query 'SELECT * FROM hoerbucher'
+    @con.query 'SELECT * FROM hoerbuecher'
   end
   
   def get_titel_id titel_id
@@ -142,12 +142,13 @@ class DBCon
   end
   
   def clean_file_table table
+    col = table.sub 'datei_', ''
     #alles einlesen
     res = @con.query 'SELECT * FROM ' + s(table)
     res.each_hash {|e|
       exists = false
       #überprüfen, ob die id des whatever in der tabelle datei steht
-      datei = @con.query 'SELECT * FROM datei WHERE ' + s(table) + '=' + s(e['id']) + ';'
+      datei = @con.query 'SELECT * FROM datei WHERE ' + col + '=' + s(e['id']) + ';'
       datei.each {|f| exists = true}
       #wenn nicht, loschen
       if !exists
@@ -215,8 +216,8 @@ class DBCon
     @con.query 'DELETE FROM ' + table + ' WHERE hoerbuch=' + s(hb_id) + ';'
   end
   
-  def remove_hb_id hb_id
-    @con.query 'DELETE FROM hoerbuecher WHERE id=' + s(hb_id) + ';'
+  def remove_hb hb_id
+    @con.query 'DELETE FROM hoerbuecher WHERE id=' + hb_id + ';'
   end
   
   def count table

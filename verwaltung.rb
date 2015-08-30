@@ -255,28 +255,38 @@ class Verwaltung
   def hoerbuch_loeschen hb
     #id des pfades holen und loeschen
     hb_res = @dbcon.get_hb_id hb.id
-    hb_res.each_hash {|e|
+    hb_res.each_hash {|hbb|
       #pfad loeschen
-      @dbcon.remove_path e['pfad']
+      @dbcon.remove_path hbb['pfad']
       #titel loeschen
-      @dbcon.remove_title e['titel']
+      @dbcon.remove_title hbb['titel']
       #verknüpfungen des autors aus zwischentabelle loeschen
-      @dbcon.remove_zw_hb e['id'], 'autoren'
+      @dbcon.remove_zw_hb hbb['id'], 'autoren'
       #verknüpfungen des sprechers aus zwischentabelle loeschen
-      @dbcon.remove_zw_hb e['id'], 'sprechers'
-      #checken, ob es autoren ohne hoerbuch gibt
-      @dbcon.clean_zw_table 'autor'
-      #checken, ob es sprecher ohne hoerbuch gibt
-      @dbcon.clean_zw_table 'sprecher'
-      #checken, ob es bewertungen ohne hoerbuch gibt
-      @dbcon.clean_bewertung
+      @dbcon.remove_zw_hb hbb['id'], 'sprechers'
+      
       #hoerbuch loeschen
-      @dbcon.remove_hb_id hb.id
+      @dbcon.remove_hb hbb['id']
+      
+      #checken, ob es autoren ohne hoerbuch gibt
+      @dbcon.clean_table 'autor'
+      #checken, ob es sprecher ohne hoerbuch gibt
+      @dbcon.clean_table 'sprecher'
+      #checken, ob es bewertungen ohne hoerbuch gibt
+      @dbcon.clean_table 'bewertung'
       #alle dateien des albums loeschen
-      dateien = get_dateien hb.id
-      dateien.each {|f|
-        datei_loeschen f.id
+      dateien = get_dateien hbb['id']
+      dateien.each_with_index {|f,i|
+        @dbcon.remove_file f.id
       }
+      #checken, ob es interpreten ohne datei gibt
+      @dbcon.clean_file_table 'datei_interpret'
+      #checken, ob es alben ohne datei gibt
+      @dbcon.clean_file_table 'datei_album'
+      #checken, ob es genres ohne datei gibt
+      @dbcon.clean_file_table 'datei_genre'
+      #checken, ob es jahre ohne datei gibt
+      @dbcon.clean_file_table 'datei_jahr'
       #alle verknüpfungen zum hoerbuch loschen
       @dbcon.remove_zw_hb hb.id, 'dateien'
     }
@@ -353,10 +363,6 @@ class Verwaltung
         #alle variablen vom alten hoerbuch holen, das alte löschen, und ein neues anlegen
         hb = get_hb hb_id
         hb.pfad = wert_neu
-        puts hb.autor
-        puts hb.pfad
-        puts hb.titel
-        puts hb.sprecher
         #altes löschen
         hoerbuch_loeschen hb
         #neues einfuegen
