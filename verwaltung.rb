@@ -401,7 +401,6 @@ class Verwaltung
               j += 1
             }
           }
-          #}
         end
       }
       #alten autor/sprecher löschen
@@ -409,9 +408,9 @@ class Verwaltung
       @dbcon.clean_zw_table 'autor'
       @dbcon.clean_table 'sprecher'
       @dbcon.clean_zw_table 'sprecher'
-      #end 
     end
   end
+  
   def get_autoren
     autoren = Hash.new
     #alle autoren holen
@@ -431,5 +430,26 @@ class Verwaltung
       }
     }
     return autoren
+  end
+  
+  def get_sprecher
+    sprecher = Hash.new
+    #alle sprecher holen
+    sprecher_res = @dbcon.get_all 'sprecher'
+    sprecher_res.each_hash {|sp|
+      sprecher[sp['sprecher']] = 0
+      #anzahl der Hoerbucher des Sprechers bestimmen
+      hbs = Array.new
+      #zwischentabelle holen
+      res = @dbcon.get_sprecher_zw_sprecher sp['id']
+      #id des hoerbuchs speichern
+      res.each_hash {|zw|
+        if !hbs.include? zw['hoerbuch']
+          hbs << zw['hoerbuch']
+            sprecher[sp['sprecher']] += 1
+        end 
+      }
+    }
+    return sprecher
   end
 end

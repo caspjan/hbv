@@ -21,6 +21,7 @@ class Main
     o.bool '--init-db', 'create all needed tables'
     o.bool '--stats', 'print stats'
     o.bool '-ga', '--get-authors', 'print all authors and the number of audiobooks.'
+    o.bool '-gs', '--get-speaker', 'print all speaker and the number of audiobooks.'
     o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new author.'
     o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
     o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, second is the new title.'
@@ -84,7 +85,11 @@ class Main
     end 
     
     if @args[:ga]
-      puts @verw.get_autoren
+      @ausg.autoren_aus @verw.get_autoren
+    end
+    
+    if @args[:gs]
+      @ausg.sprecher_aus @verw.get_sprecher
     end
     
     

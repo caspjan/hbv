@@ -128,4 +128,41 @@ class Ausgabe
       } 
     end
   end
+  def autoren_aus autoren
+    #laenge des Laengesten Namen bestimmen
+    laenge = 0
+    autoren.each {|aut|
+      laenge = aut[0].size if aut[0].size > laenge
+    }
+    ausg = "Name"
+    (laenge-3).times {|i| ausg += " "}
+    ausg += "Anzahl der Hörbücher"
+    puts 'Alle Autoren:'
+    puts ausg
+    puts
+    autoren.each {|e|
+      ausg = e[0].to_s
+      (laenge-e[0].size+1).times {|i| ausg += " "}
+      puts ausg + e[1].to_s
+    }
+  end
+  
+  def sprecher_aus sprecher
+    #laenge des Laengesten Namen bestimmen
+    laenge = 0
+    sprecher.each {|sp|
+      laenge = sp[0].size if sp[0].size > laenge
+    }
+    ausg = "Name"
+    (laenge-3).times {|i| ausg += " "}
+    ausg += "Anzahl der Hörbücher"
+    puts 'Alle Sprecher:'
+    puts ausg
+    puts
+    sprecher.each {|e|
+      ausg = e[0].to_s
+      (laenge-e[0].size+1).times {|i| ausg += " "}
+      puts ausg + e[1].to_s
+    }
+  end
 end
