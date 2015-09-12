@@ -38,6 +38,8 @@ class Einstellung_Parser
           @einst.hb_groesse = f[1]
         when 'stats_format'
           @einst.stats_format = f[1]
+        when 'player'
+          @einst.player = f[1]
         end
       end
       }

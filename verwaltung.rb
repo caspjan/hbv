@@ -452,4 +452,65 @@ class Verwaltung
     }
     return sprecher
   end
+  
+  def play hb_id, start, ende
+    #alle benötigten dateien in ein array schieben
+    dateien = get_dateien hb_id
+    #alle längen der dateien addieren, bis sie größer als start ist
+    laenge = 0
+    start_index = 0
+    skip = 0
+    dateien.each_with_index {|d,i|
+      laenge += d.laenge.to_i
+      start_index = i
+      if start < laenge
+        skip = start-(laenge-d.laenge.to_i)
+        break
+      end
+    }
+    #ab start_index alle addieren bis die laenge größer als ende ist
+    end_index = 0
+    skip_end = 0
+    dateien.each_with_index {|d,i|
+      if i > start_index
+        laenge += d.laenge.to_i
+        end_index = i.to_s
+        end_index = end_index.to_i
+      end
+      if ende < laenge
+        stop = skip+(ende-start)
+        stop = ende-(laenge-d.laenge.to_i)
+        puts stop
+        end_index = start_index if i == 0
+        break
+      end
+    }
+    
+    if end_index == start_index
+      stop = skip+(ende-start)
+    end
+    
+    #playeroptionen feststellen
+    player = @einst.player.split('/')[-1]
+    case player
+    when 'mpv'
+      if end_index == start_index
+        puts @einst.player + ' --start=' + skip.to_s + ' --end=' + stop.to_s + ' "' + dateien[start_index].pfad + '"'
+        system @einst.player + ' --start=' + skip.to_s + ' --end=' + stop.to_s + ' "' + dateien[start_index].pfad + '"'
+      elsif end_index != 0
+        puts @einst.player + ' --start=' + skip.to_s + ' "' + dateien[start_index].pfad + '"'
+        system @einst.player + ' --start=' + skip.to_s + ' "' + dateien[start_index].pfad + '"'
+        dateien.each_with_index {|e,i|
+          puts 'i: ' + i.to_s
+          puts 'start_index: ' + start_index.to_s
+          puts 'end_index: ' + stop.to_s
+          if i > start_index and i < end_index
+            system @einst.player + ' "' + dateien[i].pfad + '"'
+          end
+        }
+        puts @einst.player + ' --end=' + stop.to_s + ' "' + dateien[end_index].pfad + '"'
+        system @einst.player + ' --end=' + stop.to_s + ' "' + dateien[end_index].pfad + '"'
+      end
+    end
+  end
 end
