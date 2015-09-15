@@ -148,7 +148,7 @@ class Main
           puts 'Nothing found.'
         end
       else
-        puts @args
+        #puts @args
       end
     end
     
@@ -310,24 +310,29 @@ class Main
       end
     end
     
-    ins = @args[:insert]
-    if ins.length > 0
-      #leerzeichen links und rechts entfernen
-      ins.map! {|e|
-        e.rstrip!
-        e.lstrip!
-      }
-      if ins.length == 5
-        if Pathname.new(ins[3]).exist?
-          hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
-          @ausg.aus hb, nil, nil, nil
-          if sure?
-            @verw.hoerbuch_einfuegen hb
+    if @args[:insert]
+      ins = @args[:insert]
+      if ins.length > 0
+        #leerzeichen entfernen
+        neu = Array.new
+        ins.map! {|f|
+          f = f.strip
+          neu << f
+        }
+        puts neu
+        ins = neu
+        if ins.length == 5
+          if Pathname.new(ins[3]).exist?
+            hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
+            @ausg.aus hb, nil, nil, nil
+            if sure?
+              @verw.hoerbuch_einfuegen hb
+            else
+              puts 'cancelled.'
+            end
           else
-            puts 'cancelled.'
+            puts "Den Ordner gibts ned."
           end
-        else
-          puts "Den Ordner gibts ned."
         end
       end
     end
