@@ -261,9 +261,9 @@ class DBCon
     @con.query 'SELECT * FROM ' + s(table) + ' WHERE ' + s(col) + '="' + s(val) + '";'
   end
   
-  def ins_hb title, path, rating
-    pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad, bewertung) VALUES(?, ?, ?)'
-    pst.execute title, path, rating
+  def ins_hb title, path, rating, pos
+    pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad, bewertung, position) VALUES(?, ?, ?, ?)'
+    pst.execute title, path, rating, pos
   end
   
   def ins_file path, title, length, size, number, album, interpret, year, genre
@@ -274,6 +274,17 @@ class DBCon
   def ins_file_zw hb_id, file_id
     pst = @con.prepare 'INSERT INTO dateien(hoerbuch, datei) VALUES(?, ?)'
     pst.execute file_id, hb_id
+  end
+  
+  def up_pos hb_id, pos
+    @con.query 'UPDATE hoerbuecher SET position=' + s(pos) + ' WHERE id=' + s(hb_id) + ';'
+  end
+  
+  def get_last_pos hb_id
+    res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + hb_id + ';'
+    res.each_hash {|e|
+      return e['position']
+    }
   end
   
   def get_all table

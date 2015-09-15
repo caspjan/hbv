@@ -26,7 +26,7 @@ class Main
     o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
     o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, second is the new title.'
     o.array '-up', '--update-path', 'update the path of audiobook. First argument is the id of audiobook, second is the new path. All new files are parsed.'
-    o.array '-p', '--play', 'play audiobook. Needs ID of audiobook, start and end. Example: "-p 1,0,3600": Play the first hour of the audiobook. Same as "-p 1,0,1h". Time can be in Hours (h), minutes (m). Standard is seconds. Example: "-p 1,1h23m45,5000". Same as "-p 1,1h23m45s,5000". * Can be used to mark the end: "-p 1,0,*". Plays from start to end.'
+    o.array '-p', '--play', 'play audiobook. Needs ID of audiobook, start and end. Example: "-p 1,0,3600": Play the first hour of the audiobook. Same as "-p 1,0,1h". Time can be in Hours (h), minutes (m). Standard is seconds. Example: "-p 1,1h23m45,5000". Same as "-p 1,1h23m45s,5000". * Can be used to mark the end: "-p 1,0,*". Plays from start to end. r means resume form last postion Example: "-p 1,r,*"'
     } 
     
     einst_pars = Einstellung_Parser.new '/home/jan/Dokumente/Programmierzeug/Hoerbuch/hoerbuch.conf'
@@ -140,10 +140,24 @@ class Main
             start = sek if i == 1
             ende = sek if i == 2
           }
+          start = @verw.get_last_pos id
           if p[2].eql? '*'
             ende = @verw.get_hb_laenge @verw.get_dateien p[0]
           end
-          @verw.play id, start.to_i, ende.to_i
+          t1 = Thread.new {
+            @verw.play id, start.to_i, ende.to_i
+            Thread.current['fertig'] = true
+          }
+          pos = start.to_i
+          while t1['fertig'].nil?
+            pos += 5
+            sleep 5
+            if !t1['fertig'].nil?
+              @verw.up_pos id, pos
+            end
+          end
+          t1.join
+          @verw.up_pos id, ende
         else
           puts 'Nothing found.'
         end
@@ -338,20 +352,20 @@ class Main
     end
   end
 end
-begin
+#begin
   Main.new
-rescue Mysql::Error => e
-  #connection refused
-  if e.errno == 2002
-    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
-  #keine rechte
-  elsif e.errno == 1044
-    puts "Zugriff für User " + @einst.user + " verweigert"
-  end
-  #Datenbank nicht gefunden
-  if e.error.start_with? "Unknown database"
-    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
-  end
-  puts e
-  exit 1
-end
+#rescue Mysql::Error => e
+#  #connection refused
+#  if e.errno == 2002
+#    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
+#  #keine rechte
+#  elsif e.errno == 1044
+#    puts "Zugriff für User " + @einst.user + " verweigert"
+#  end
+#  #Datenbank nicht gefunden
+#  if e.error.start_with? "Unknown database"
+#    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
+#  end
+#  puts e
+#  exit 1
+#end

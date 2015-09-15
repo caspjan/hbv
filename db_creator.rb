@@ -12,7 +12,7 @@ class DB_Creator
     @con.query 'USE ' + @einst.db
     @con.query 'CREATE TABLE `autor` (`id` int(11) NOT NULL AUTO_INCREMENT, `autor` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
     @con.query 'CREATE TABLE `autoren` (`hoerbuch` int(11) NOT NULL, `autor` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `hoerbuecher` (`id` int(11) NOT NULL AUTO_INCREMENT, `titel` int(11) NOT NULL, `pfad` int(11) NOT NULL, UNIQUE KEY `id_2` (`id`), KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
+    @con.query 'CREATE TABLE `hoerbuecher` (`id` int(11) NOT NULL AUTO_INCREMENT, `titel` int(11) NOT NULL, `pfad` int(11) NOT NULL, `position` INT(11) NOT NULL, `bewertung` INT(11) NOT NULL, UNIQUE KEY `id_2` (`id`), KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
     @con.query 'CREATE TABLE `pfad` (`id` int(11) NOT NULL AUTO_INCREMENT, `pfad` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
     @con.query 'CREATE TABLE `sprecher` (`id` int(11) NOT NULL AUTO_INCREMENT, `sprecher` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1'
     @con.query 'CREATE TABLE `sprechers` (`hoerbuch` int(11) NOT NULL, `sprecher` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1'

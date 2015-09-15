@@ -206,7 +206,7 @@ class Verwaltung
     @dbcon.ins 'pfad', 'pfad', hb.pfad
     
     #hörbuch anlegen
-    @dbcon.ins_hb titel_id, pfad_id, bewertung_id
+    @dbcon.ins_hb titel_id, pfad_id, bewertung_id, 0
     
     #dateien einlesen
     pp = Pfad_Parser.new hb.pfad, @einst
@@ -451,6 +451,14 @@ class Verwaltung
       }
     }
     return sprecher
+  end
+  
+  def up_pos hb_id, pos
+    @dbcon.up_pos hb_id, pos
+  end
+  
+  def get_last_pos hb_id
+    @dbcon.get_last_pos hb_id
   end
   
   def play hb_id, start, ende
