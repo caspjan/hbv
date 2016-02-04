@@ -1,0 +1,10 @@
+Bugs:
+-Größe und Länge in ausgabe.rb beim einfügen von hörbüchern nicht ausgeben
+-Kommas in Namen erlauben beim einfügen
+
+Features:
+-größe pro format ausgeben
+
+Performance:
+-remove tag performanter machen
+-hoerbuch löschen performanter machen

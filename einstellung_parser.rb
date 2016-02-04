@@ -40,6 +40,12 @@ class Einstellung_Parser
           @einst.stats_format = f[1]
         when 'player'
           @einst.player = f[1]
+        when 'basedir'
+          if !f[1].end_with? '/'
+            @einst.basedir = f[1] + '/'
+          else
+            @einst.basedir = f[1]
+          end
         end
       end
       }

@@ -8,24 +8,28 @@ class Main
     o.string '-s', '--speaker', 'the speaker to search for'
     o.string '-t', '--title', 'the title to search for'
     o.integer '-b', '--rating', 'print all audiobooks with rating (0-10)'
-    o.array '-i', '--insert', 'insert new audiobook into database; title,author,speaker,path,rating (NO spaces)'
+    o.string '-tag', '--tag', 'the tag to search for'
+    o.array '-i', '--insert', 'insert new audiobook into database; title,author:author2,speaker:speaker2,path,rating,tag1:tag2:tag3.. (NO spaces)'
     o.on '-h', '--help', 'display this help' do
       puts o
     end
     o.bool '-cdb', '--clear-db', 'clear whole database'
     o.bool '-f', '--force', "don't ask"
     o.string '-r', '--remove', '[id] remove audiobook from database'
-    o.string '-id', '--get-by-id', '[id] get audiobook by id'
+    o.string '-id', '--get-id', '[id] get audiobook by id'
     o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
-    o.bool '--files', 'print all files of the audiobook'
+    o.string '--files', 'print all files of the audiobook with given format. Example: --files mp3'
     o.bool '--init-db', 'create all needed tables'
     o.bool '--stats', 'print stats'
     o.bool '-ga', '--get-authors', 'print all authors and the number of audiobooks.'
     o.bool '-gs', '--get-speaker', 'print all speaker and the number of audiobooks.'
-    o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new author.'
-    o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speaker.'
+    o.bool '-gb', '--get-basedir', 'Basispfad der Hörbuchsammlung ausgeben'
+    o.array '-ua', '--update-author', 'update the author of audiobook. First argument is the id of audiobook, second is the new authors.'
+    o.array '-us', '--update-speaker', 'update the speaker of audiobook. First argument is the id of audiobook, second is the new speakers.'
     o.array '-ut', '--update-title', 'update the title of audiobook. First argument is the id of audiobook, second is the new title.'
-    o.array '-up', '--update-path', 'update the path of audiobook. First argument is the id of audiobook, second is the new path. All new files are parsed.'
+    o.array '-up', '--update-path', 'update the path of audiobook. First argument is the id of audiobook, second is the new path.'
+    o.array '-at', '--add-tag', 'add tag to audiobook. First arg is the id of audiobook, second is new tag'
+    o.array '-rt', '--remove-tag', 'remove tag from audiobook. First arg is the id of audiobook, second is tag to remove'
     o.array '-p', '--play', 'play audiobook. Needs ID of audiobook, start and end. Example: "-p 1,0,3600": Play the first hour of the audiobook. Same as "-p 1,0,1h". Time can be in Hours (h), minutes (m). Standard is seconds. Example: "-p 1,1h23m45,5000". Same as "-p 1,1h23m45s,5000". * Can be used to mark the end: "-p 1,0,*". Plays from start to end. r means resume form last postion Example: "-p 1,r,*"'
     } 
     
@@ -42,6 +46,8 @@ class Main
         if e.errno == 1044
           puts "Zugriff für User " + @einst.user + " verweigert."
           exit 1
+        else
+          puts e
         end
       end
     end
@@ -60,7 +66,7 @@ class Main
     
     def files? hb_id
       if @args[:files]
-        @dateien = @verw.get_dateien hb_id
+        @dateien = @verw.get_dateien(hb_id, @args[:files])
         return @dateien
       else
         return nil
@@ -69,8 +75,7 @@ class Main
     
     def size? hb_id
       if @einst.format.include? "%g"
-        @dateien = @verw.get_dateien hb_id if @dateien.nil?
-        return @verw.get_hb_size(@dateien)
+        return @verw.get_hb_size hb_id
       else
         return nil
       end
@@ -78,8 +83,7 @@ class Main
     
     def laenge? hb_id
       if @einst.format.include? "%l"
-        @dateien = @verw.get_dateien hb_id if @dateien.nil?
-        return @verw.get_hb_laenge(@dateien)
+        return @verw.get_hb_laenge hb_id
       else
         return nil
       end
@@ -92,6 +96,11 @@ class Main
     if @args[:gs]
       @ausg.sprecher_aus @verw.get_sprecher
     end
+    
+    if @args[:gb]
+      puts @einst.basedir
+    end
+    
     
     if @args[:p]
       #checken, ob das array die richtige laenge hat
@@ -166,7 +175,50 @@ class Main
       end
     end
     
-    
+    if @args[:at]
+      #checken, ob das array die richtige laenge hat
+      at = @args[:at]
+      if at.length == 2
+        #altes Hoerbuch ausgeben
+        id = at[0]
+        tag = at[1]
+        hb = @verw.get_hb id
+        if !hb.nil?
+          puts 'Altes Hoerbuch:'
+          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          hb_new = hb.clone
+          hb_new.tags = hb.tags << tag
+          #neues Hoerbuch ausgeben
+          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          if sure?
+            @verw.add_tag at[0], at[1]
+          end
+        end
+      end
+    end
+
+    if @args[:rt]
+      #checken, ob das array die richtige laenge hat
+      rt = @args[:rt]
+      if rt.length == 2
+        #altes Hoerbuch ausgeben
+        id = rt[0]
+        tag = rt[1]
+        hb = @verw.get_hb id
+        if !hb.nil?
+          puts 'Altes Hoerbuch:'
+          @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          hb_new = hb.clone
+          hb_new.tags.delete tag
+          #neues Hoerbuch ausgeben
+          @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+          if sure?
+            @verw.remove_tag rt[0], rt[1]
+          end
+        end
+      end
+    end
+
     if @args[:ua]
       #checken, ob das array die richtige laenge hat
       ua = @args[:ua]
@@ -178,11 +230,11 @@ class Main
           puts 'Altes Hoerbuch:'
           @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
           hb_new = hb.clone
-          hb_new.autor = Array.new << ua[1]
+          hb_new.autor = ua[1].split ':'
           puts 'Neues Hoerbuch:'
           @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
           if sure?
-            @verw.change id, 'autor', hb_new.autor, hb.autor
+            @verw.update_autor id, hb_new.autor
           end
         else
           puts 'Nothing found.'
@@ -205,7 +257,7 @@ class Main
           puts 'Neues Hoerbuch:'
           @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
           if sure?
-            @verw.change id, 'titel', hb_new.titel, hb.titel
+            @verw.update_titel id, hb_new.titel
           end
         else
           puts 'Nothing found.'
@@ -218,22 +270,27 @@ class Main
       up = @args[:up]
       if up.length == 2
         #checken, ob es den pfad gibt
-        if Pathname(up[1]).exist?
+        pfad = @einst.basedir + up[1]
+        if Pathname(pfad).exist?
           #altes Hoerbuch ausgeben
           id = up[0]
           hb = @verw.get_hb id
           if !hb.nil?
-            puts 'Altes Hoerbuch:'
-            @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
             hb_new = hb.clone
             hb_new.pfad = up[1]
-            puts 'Neues Hoerbuch:'
-            @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
-            if sure?
-              @verw.change id, 'pfad', hb_new.pfad, hb.pfad
+            if hb.eql? hb_new        
+              puts 'Altes Hoerbuch:'
+              @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
+              puts 'Neues Hoerbuch:'
+              @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
+              if sure?
+                @verw.update_pfad id, hb_new.pfad
+              end
+            else
+              puts 'Da hat sich nix geändert.'
             end
           else
-            puts 'Nothing found.'
+            puts 'Das angegebene Hörbuch gibts ned!'
           end
         else
           puts "Den Ordner gibts ned!"
@@ -252,11 +309,13 @@ class Main
           puts 'Altes Hoerbuch:'
           @ausg.aus hb, files?(hb.id), size?(hb.id), laenge?(hb.id)
           hb_new = hb.clone
-          hb_new.sprecher = Array.new << us[1]
+          hb_new.sprecher = us[1].split ':'
+          puts
           puts 'Neues Hoerbuch:'
           @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
           if sure?
-            @verw.change id, 'sprecher', hb_new.sprecher, hb.sprecher
+            #@verw.change id, 'sprecher', hb_new.sprecher, hb.sprecher
+            @verw.update_sprecher id, hb_new.sprecher
           end
         else
           puts 'Nothing found.'
@@ -277,9 +336,9 @@ class Main
       id = @args[:remove]
       res = @verw.get_hb id
       if !res.nil?
-        @ausg.aus res, files?(res.id.to_i), size?(id), files?(id)
+        @ausg.aus res, files?(res.id.to_i), size?(id), laenge?(id)
         if sure?
-          @verw.hoerbuch_loeschen Hoerbuch.new id, nil, nil, nil, nil, nil
+          @verw.hoerbuch_loeschen id
         end
       else
         puts "Nothing found."
@@ -299,6 +358,12 @@ class Main
       res = @verw.suche_autor @args[:author]
       res.each {|f| @ausg.aus f, files?(f.id), size?(f.id), laenge?(f.id) }
     end
+    
+    if @args[:tag]
+      res = @verw.suche_tag @args[:tag]
+      res.each {|f| @ausg.aus f, files?(f.id), size?(f.id), laenge?(f.id) }
+    end
+    
     
     if @args[:title]
       res = @verw.suche_titel @args[:title]
@@ -333,13 +398,25 @@ class Main
           f = f.strip
           neu << f
         }
-        puts neu
         ins = neu
-        if ins.length == 5
-          if Pathname.new(ins[3]).exist?
-            hb = Hoerbuch.new 0, ins[0], Array.new << ins[1] , Array.new << ins[2], ins[3], ins[4].to_i
+        #checken ob es alle parameter gibt
+        if ins.length == 6
+          #checken ob es den angegebenen Ordner gibt
+          pfad = @einst.basedir + ins[3]
+          puts pfad
+          if Pathname.new(pfad).exist?
+            #tags, autoren, sprecher parsen
+            tags = ins[5].split ':'
+            autoren = ins[1].split ':'
+            sprecher = ins[2].split ':'
+            
+            #neues Hoerbuch erstellen
+            hb = Hoerbuch.new 0, ins[0], autoren , sprecher, ins[3], ins[4].to_i, tags
+            #neues Hoerbuch ausgeben um zu checken ob alles passt
             @ausg.aus hb, nil, nil, nil
+            #benutzereingabe abwarten
             if sure?
+              #Hoerbuch an die Verwaltung übergeben
               @verw.hoerbuch_einfuegen hb
             else
               puts 'cancelled.'
@@ -347,6 +424,8 @@ class Main
           else
             puts "Den Ordner gibts ned."
           end
+        else
+          puts "falsche Anzahl Argumente"
         end
       end
     end

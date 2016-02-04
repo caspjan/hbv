@@ -10,19 +10,84 @@ class DB_Creator
   
   def create_tables
     @con.query 'USE ' + @einst.db
-    @con.query 'CREATE TABLE `autor` (`id` int(11) NOT NULL AUTO_INCREMENT, `autor` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `autoren` (`hoerbuch` int(11) NOT NULL, `autor` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `hoerbuecher` (`id` int(11) NOT NULL AUTO_INCREMENT, `titel` int(11) NOT NULL, `pfad` int(11) NOT NULL, `position` INT(11) NOT NULL, `bewertung` INT(11) NOT NULL, UNIQUE KEY `id_2` (`id`), KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `pfad` (`id` int(11) NOT NULL AUTO_INCREMENT, `pfad` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `sprecher` (`id` int(11) NOT NULL AUTO_INCREMENT, `sprecher` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `sprechers` (`hoerbuch` int(11) NOT NULL, `sprecher` int(11) NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `titel` (`id` int(1) NOT NULL AUTO_INCREMENT, `titel` text NOT NULL, UNIQUE KEY `id` (`id`)) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `bewertung` (`id` int(11) NOT NULL AUTO_INCREMENT, `bewertung` int(11) NOT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `datei` ( `id` int(11) NOT NULL AUTO_INCREMENT, `pfad` text NOT NULL, `titel` text NOT NULL, `laenge` int(11) NOT NULL, `groesse` int(11) NOT NULL, `interpret` int(11) NOT NULL, `jahr` int(11) NOT NULL, `genre` int(11) NOT NULL, `album` int(11) NOT NULL, `nummer` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `dateien` ( `hoerbuch` int(11) NOT NULL, `datei` int(11) NOT NULL, UNIQUE KEY `cd` (`hoerbuch`,`datei`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `datei_album` ( `id` int(11) NOT NULL AUTO_INCREMENT, `album` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `datei_genre` ( `id` int(11) NOT NULL AUTO_INCREMENT, `genre` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `datei_interpret` ( `id` int(11) NOT NULL AUTO_INCREMENT, `interpret` text NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
-    @con.query 'CREATE TABLE `datei_jahr` ( `id` int(11) NOT NULL AUTO_INCREMENT, `jahr` int(11) NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`), KEY `id_2` (`id`)) ENGINE=InnoDB DEFAULT CHARSET=latin1'
+    @con.query "CREATE TABLE `Autor` (
+      `idAutor` int(11) NOT NULL AUTO_INCREMENT,
+      `name` varchar(45) DEFAULT NULL,
+      PRIMARY KEY (`idAutor`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Sprecher` (
+      `idSprecher` int(11) NOT NULL AUTO_INCREMENT,
+      `name` varchar(45) NOT NULL,
+      PRIMARY KEY (`idSprecher`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Tag` (
+      `idTag` int(11) NOT NULL AUTO_INCREMENT,
+      `tag` varchar(100) NOT NULL,
+      PRIMARY KEY (`idTag`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Hoerbuch` (
+      `idHoerbuch` int(11) NOT NULL AUTO_INCREMENT,
+      `pfad` varchar(500) NOT NULL,
+      `bewertung` varchar(45) DEFAULT NULL,
+      `titel` varchar(100) NOT NULL,
+      `position` int(11) DEFAULT '0',
+      PRIMARY KEY (`idHoerbuch`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Tag_has_Hoerbuch` (
+      `Tag_idTag` int(11) NOT NULL,
+      `Hoerbuch_idHoerbuch` int(11) NOT NULL,
+      PRIMARY KEY (`Tag_idTag`,`Hoerbuch_idHoerbuch`),
+      KEY `fk_Tag_has_Hoerbuch_Hoerbuch1_idx` (`Hoerbuch_idHoerbuch`),
+      KEY `fk_Tag_has_Hoerbuch_Tag1_idx` (`Tag_idTag`),
+      CONSTRAINT `fk_Tag_has_Hoerbuch_Hoerbuch1` FOREIGN KEY (`Hoerbuch_idHoerbuch`) REFERENCES `Hoerbuch` (`idHoerbuch`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+      CONSTRAINT `fk_Tag_has_Hoerbuch_Tag1` FOREIGN KEY (`Tag_idTag`) REFERENCES `Tag` (`idTag`) ON DELETE NO ACTION ON UPDATE NO ACTION
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Autor_has_Hoerbuch` (
+      `Autor_idAutor` int(11) NOT NULL,
+      `Hoerbuch_idHoerbuch` int(11) NOT NULL,
+      PRIMARY KEY (`Autor_idAutor`,`Hoerbuch_idHoerbuch`),
+      KEY `fk_Autor_has_Hoerbuch_Hoerbuch1_idx` (`Hoerbuch_idHoerbuch`),
+      KEY `fk_Autor_has_Hoerbuch_Autor_idx` (`Autor_idAutor`),
+      CONSTRAINT `fk_Autor_has_Hoerbuch_Autor` FOREIGN KEY (`Autor_idAutor`) REFERENCES `Autor` (`idAutor`) ON DELETE CASCADE ON UPDATE NO ACTION,
+      CONSTRAINT `fk_Autor_has_Hoerbuch_Hoerbuch1` FOREIGN KEY (`Hoerbuch_idHoerbuch`) REFERENCES `Hoerbuch` (`idHoerbuch`) ON DELETE NO ACTION ON UPDATE NO ACTION
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Sprecher_has_Hoerbuch` (
+      `Hoerbuch_idHoerbuch` int(11) NOT NULL,
+      `Sprecher_idSprecher` int(11) NOT NULL,
+      PRIMARY KEY (`Hoerbuch_idHoerbuch`,`Sprecher_idSprecher`),
+      KEY `fk_Hoerbuch_has_Sprecher_Sprecher1_idx` (`Sprecher_idSprecher`),
+      KEY `fk_Hoerbuch_has_Sprecher_Hoerbuch1_idx` (`Hoerbuch_idHoerbuch`),
+      CONSTRAINT `fk_Hoerbuch_has_Sprecher_Hoerbuch1` FOREIGN KEY (`Hoerbuch_idHoerbuch`) REFERENCES `Hoerbuch` (`idHoerbuch`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+      CONSTRAINT `fk_Hoerbuch_has_Sprecher_Sprecher1` FOREIGN KEY (`Sprecher_idSprecher`) REFERENCES `Sprecher` (`idSprecher`) ON DELETE CASCADE ON UPDATE NO ACTION
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Format` (
+      `idFormat` int(11) NOT NULL AUTO_INCREMENT,
+      `Hoerbuch_idHoerbuch` int(11) NOT NULL,
+      `format` varchar(45) NOT NULL,
+      PRIMARY KEY (`idFormat`,`Hoerbuch_idHoerbuch`),
+      KEY `fk_Format_Hoerbuch1_idx` (`Hoerbuch_idHoerbuch`),
+      CONSTRAINT `fk_Format_Hoerbuch1` FOREIGN KEY (`Hoerbuch_idHoerbuch`) REFERENCES `Hoerbuch` (`idHoerbuch`) ON DELETE CASCADE ON UPDATE NO ACTION
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `CD` (
+      `idCD` int(11) NOT NULL AUTO_INCREMENT,
+      `nummer` varchar(45) DEFAULT NULL,
+      `pfad` varchar(500) DEFAULT NULL,
+      `Format_idFormat` int(11) NOT NULL,
+      PRIMARY KEY (`idCD`,`Format_idFormat`),
+      KEY `fk_CD_Format1_idx` (`Format_idFormat`),
+      CONSTRAINT `fk_CD_Format1` FOREIGN KEY (`Format_idFormat`) REFERENCES `Format` (`idFormat`) ON DELETE CASCADE ON UPDATE NO ACTION
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    @con.query "CREATE TABLE `Datei` (
+      `idDatei` int(11) NOT NULL AUTO_INCREMENT,
+      `pfad` varchar(500) DEFAULT NULL,
+      `CD_idCD` int(11) NOT NULL,
+      `nummer` varchar(45) NOT NULL,
+      `groesse` int(11) NOT NULL,
+      `laenge` int(11) NOT NULL,
+      PRIMARY KEY (`idDatei`,`CD_idCD`),
+      KEY `fk_Datei_CD1_idx` (`CD_idCD`),
+      CONSTRAINT `fk_Datei_CD1` FOREIGN KEY (`CD_idCD`) REFERENCES `CD` (`idCD`) ON DELETE CASCADE ON UPDATE NO ACTION
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+    
   end
 end

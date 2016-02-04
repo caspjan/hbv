@@ -10,4 +10,5 @@ class Einstellung
   attr_accessor :hb_groesse
   attr_accessor :stats_format
   attr_accessor :player
+  attr_accessor :basedir
 end

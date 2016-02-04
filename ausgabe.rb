@@ -63,23 +63,40 @@ class Ausgabe
   end
   
   def stats_aus stats
+#   %l  -> Gesamtlaenge aller Hoerbuecher
+#   %s  -> Gesamtgroesse aller Hoerbuecher
+#   %d  -> Anzahl aller Dateien
+#   %h  -> Anzahl aller Hoerbuecher
+#   %t  -> Anzahl aller Tags
+#   %b  -> Durchschnittliche Bewertung
+#   %ha -> Durchschnittliche Anzahl Hörbücher pro Autor
+#   %hs -> Durchschnittliche Anzahl Hörbücher pro Sprecher
+#   %ht -> Durchschnittliche Anzahl Hörbücher pro Tag
+#   %ah -> Durchschnittliche Anzahl Autoren pro Hörbuch
+#   %sh -> Durchschnittliche Anzahl Sprecher pro Hörbuch
+#   %th -> Durchschnittliche Anzahl Tags pro Hörbuch
+    
     out = @stats_format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
+    out.gsub! "%ha", stats.avg_hb_pro_autor
+    out.gsub! "%hs", stats.avg_hb_pro_sprecher
+    out.gsub! "%ht", stats.avg_hb_pro_tag
+    out.gsub! "%ah", stats.avg_autoren_pro_hb
+    out.gsub! "%sh", stats.avg_sprecher_pro_hb
+    out.gsub! "%th", stats.avg_tags_pro_hb
     out.gsub! "%h", stats.hb_ges
     out.gsub! "%s", calc_size(stats.size_ges)
     out.gsub! "%d", stats.dateien_ges.to_s
     out.gsub! "%l", calc_laenge(stats.laenge_ges)
-    out.gsub! "%bb", stats.bewertungen.to_s
-    out.gsub! "%b", stats.bw_durchschn.to_s
+    out.gsub! "%b", stats.bw_avg.to_s
+    out.gsub! "%t", stats.tags_ges
     
     puts out
   end
   
   def aus hb, dateien, size, laenge
     out = @format.gsub "%n", "\n"
-    out.gsub! "%tb", "\t"
-    out.gsub! "%id", hb.id.to_s
-    out.gsub! "%t", hb.titel
+
     autoren = ""
     anz_autoren = hb.autor.length
     hb.autor.each_with_index {|e,i|
@@ -88,7 +105,6 @@ class Ausgabe
         autoren << ', '
       end
       }
-    out.gsub! "%a", autoren
    
     sprecher = ""
     anz_sprecher = hb.sprecher.length
@@ -98,9 +114,29 @@ class Ausgabe
         sprecher << ', '
       end
     }
-    out.gsub! "%g", calc_size(size) if !size.nil?
+    
+    tags = ""
+    anz_tags = hb.tags.length
+    hb.tags.each_with_index {|e,i|
+      tags << e
+      if i < anz_tags-1
+        tags << ', '
+      end
+    }
+    
+    formate = ''
+    size.each {|e|
+      formate += e[0] + ': ' + calc_size(e[1])
+    }
+    
+    out.gsub! "%tb", "\t"
+    out.gsub! "%id", hb.id.to_s
+    out.gsub! "%ta", tags
+    out.gsub! "%t", hb.titel
+    out.gsub! "%g", formate #calc_size(size) if !size.nil?
     out.gsub! "%l", calc_laenge(laenge) if !laenge.nil?
     out.gsub! "%s", sprecher
+    out.gsub! "%a", autoren
     out.gsub! "%b", hb.bewertung.to_s
     out.gsub! "%p", hb.pfad
     
@@ -115,12 +151,7 @@ class Ausgabe
         #restliche variablen ersetzen
         d_out.gsub! "%tb", "\t"
         d_out.gsub! "%p", e.pfad
-        d_out.gsub! "%t", e.titel
-        d_out.gsub! "%a", e.album
-        d_out.gsub! "%i", e.interpret
-        d_out.gsub! "%g", e.genre
         d_out.gsub! "%no", e.nummer
-        d_out.gsub! "%j", e.jahr
         d_out.gsub! "%l", calc_laenge(e.laenge)
         d_out.gsub! "%s", calc_size(e.groesse)
         puts
@@ -128,6 +159,7 @@ class Ausgabe
       } 
     end
   end
+  
   def autoren_aus autoren
     #laenge des Laengesten Namen bestimmen
     laenge = 0

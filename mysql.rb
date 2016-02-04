@@ -7,75 +7,98 @@ class DBCon
   end
   
   def s i
-    i.to_s
+    i.to_s.dup.force_encoding(Encoding::UTF_8)
   end
   
   def i s
     s.to_i
   end
   
-  def get_hb_id hb_id
-    @con.query 'SELECT * FROM hoerbuecher WHERE id=' + s(hb_id) + ';'
+  def get_hb hb_id
+    #autoren holen
+    autoren = Array.new
+    res = @con.query "SELECT name FROM Autor,Hoerbuch,Autor_has_Hoerbuch where Hoerbuch.idHoerbuch = " + s(hb_id) + " and Hoerbuch.idHoerbuch = Autor_has_Hoerbuch.Hoerbuch_idHoerbuch and Autor.idAutor = Autor_has_Hoerbuch.Autor_idAutor;"
+    res.each_hash {|aut|
+      autoren << s(aut['name'])
+    }
+    #sprecher holen
+    sprecher = Array.new
+    res = @con.query "SELECT name FROM Sprecher,Hoerbuch,Sprecher_has_Hoerbuch where Hoerbuch.idHoerbuch = " + s(hb_id) + " and Hoerbuch.idHoerbuch = Sprecher_has_Hoerbuch.Hoerbuch_idHoerbuch and Sprecher.idSprecher = Sprecher_has_Hoerbuch.Sprecher_idSprecher;"
+    res.each_hash {|spr|
+      sprecher << s(spr['name'])
+    }
+    
+    #tags holen
+    tags = Array.new
+    res = @con.query "SELECT Tag.tag FROM Tag,Tag_has_Hoerbuch,Hoerbuch where Hoerbuch.idHoerbuch = " + s(hb_id) + " and Hoerbuch.idHoerbuch = Tag_has_Hoerbuch.Hoerbuch_idHoerbuch and Tag.idTag = Tag_has_Hoerbuch.Tag_idTag;"
+    res.each_hash {|tag|
+      tags << s(tag['tag'])
+    }
+    
+    #rest holen
+    hb = Hoerbuch.new 0, nil, autoren, sprecher, nil, nil, tags
+    res = @con.query "SELECT Hoerbuch.idHoerbuch as id,Hoerbuch.titel as titel,Hoerbuch.pfad as pfad,Hoerbuch.bewertung as bw from Hoerbuch where Hoerbuch.idHoerbuch = " + s(hb_id)
+
+    res.each_hash {|e|
+      hb.titel = e['titel']
+      hb.id = e['id']
+      hb.pfad = e['pfad']
+      hb.bewertung = e['bw']
+    }
+    if hb.id.eql? 0
+      return nil
+    else
+      return hb
+    end
+  end
+  
+  def get_hb_laenge hb_id
+    res = @con.query 'SELECT sum(D.laenge) AS laenge FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id)
+    res.each_hash {|e|
+      return e['laenge']
+    }
   end
 
-  def get_hbs
-    @con.query 'SELECT * FROM hoerbuecher'
+  def get_hb_size hb_id
+    formate = Hash.new
+    res = @con.query 'SELECT sum(D.groesse) AS size, F.format as format FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id)
+    res.each_hash {|e|
+      formate[e['format']] = e['size']
+    }
+    return formate
   end
   
-  def get_titel_id titel_id
-    @con.query 'SELECT * FROM titel WHERE id=' + s(titel_id) + ';'
-  end
-  
-  def get_bewertung_id bw_id
-    @con.query 'SELECT * FROM bewertung WHERE id=' + s(bw_id) + ';'
-  end
-  
-  def get_pfad_id pfad_id
-    @con.query 'SELECT * FROM pfad WHERE id=' + s(pfad_id) + ';'
-  end
-  
-  def get_autor_zw_hb hb_id
-    @con.query 'SELECT * FROM autoren WHERE hoerbuch=' + s(hb_id) + ';'
-  end
-  
-  def get_autor_id autor_id
-    @con.query 'SELECT * FROM autor WHERE id=' + s(autor_id) + ';'
-  end
-  
-  def get_sprecher_zw_hb hb_id
-    @con.query 'SELECT * FROM sprechers WHERE hoerbuch=' + s(hb_id) + ';'
-  end
-  
-  def get_sprecher_zw_sprecher sprecher_id
-    @con.query 'SELECT * FROM sprechers WHERE sprecher=' + s(sprecher_id) + ';'
-  end
-  
-  def get_sprecher_id sprecher_id
-    @con.query 'SELECT * FROM sprecher WHERE id=' + s(sprecher_id) + ';'
+  def full_dump
+    hbs = Array.new
+    #alle ids der hörbücher holen
+    res = @con.query "SELECT Hoerbuch.idHoerbuch AS id FROM Hoerbuch"
+    res.each_hash {|e|
+      hbs << get_hb(e['id'])
+    }
+    return hbs
   end
   
   def clear_tables
-    @con.query 'TRUNCATE datei'
-    @con.query 'TRUNCATE dateien'
-    @con.query 'TRUNCATE datei_interpret'
-    @con.query 'TRUNCATE datei_jahr'
-    @con.query 'TRUNCATE datei_genre'
-    @con.query 'TRUNCATE datei_album'
-    @con.query 'TRUNCATE hoerbuecher'
-    @con.query 'TRUNCATE titel'
-    @con.query 'TRUNCATE autor'
-    @con.query 'TRUNCATE autoren'
-    @con.query 'TRUNCATE pfad'
-    @con.query 'TRUNCATE sprecher'
-    @con.query 'TRUNCATE sprechers'
-    @con.query 'TRUNCATE bewertung'
+    @con.query 'SET FOREIGN_KEY_CHECKS = 0'
+    @con.query 'TRUNCATE TABLE Autor_has_Hoerbuch'
+    @con.query 'TRUNCATE TABLE Sprecher_has_Hoerbuch'
+    @con.query 'TRUNCATE TABLE Autor'
+    @con.query 'TRUNCATE TABLE Sprecher'
+    @con.query 'TRUNCATE TABLE Datei'
+    @con.query 'TRUNCATE TABLE CD'
+    @con.query 'TRUNCATE TABLE Format'
+    @con.query 'TRUNCATE TABLE Tag'
+    @con.query 'TRUNCATE TABLE Tag_has_Hoerbuch'
+    @con.query 'TRUNCATE TABLE Hoerbuch'
+    @con.query 'SET FOREIGN_KEY_CHECKS = 1'
   end
   
   def gibt_wert? tabelle, spalte, wert
-    puts "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
+    #puts "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
     result = @con.query "SELECT * FROM " + tabelle + " WHERE " + spalte + "='" + wert.to_s + "';"
     id = -1
-    result.each_hash {|e| id = e['id']}
+    id_name = "id" + tabelle
+    result.each_hash {|e| id = e[id_name]}
     if id == -1
         return false
     else
@@ -84,31 +107,74 @@ class DBCon
   end
   
   def suche_sprecher speaker
-    @con.query "SELECT * FROM sprecher WHERE sprecher LIKE '%" + s(speaker) + "%';"
+    #ids der hoerbucher holen
+    res = @con.query "SELECT Hoerbuch.idHoerbuch as id from Sprecher,Hoerbuch,Sprecher_has_Hoerbuch where Sprecher.name LIKE '%" + s(speaker) + "%' and Sprecher.idSprecher = Sprecher_has_Hoerbuch.Sprecher_idSprecher and Hoerbuch.idHoerbuch = Sprecher_has_Hoerbuch.Hoerbuch_idHoerbuch;"
+    
+    hbs = Array.new
+    res.each_hash {|hb|
+      hbs << get_hb(hb['id'])
+    }
+    return hbs
   end
   
   def suche_autor author
-    @con.query "SELECT * FROM autor WHERE autor LIKE '%" + s(author) + "%';"
+    #ids der hoerbucher holen
+    res = @con.query "SELECT Hoerbuch.idHoerbuch as id from Autor,Hoerbuch,Autor_has_Hoerbuch where Autor.name LIKE '%" + s(author) + "%' and Autor.idAutor = Autor_has_Hoerbuch.Autor_idAutor and Hoerbuch.idHoerbuch = Autor_has_Hoerbuch.Hoerbuch_idHoerbuch;"
+    
+    hbs = Array.new
+    res.each_hash {|hb|
+      hbs << get_hb(hb['id'])
+    }
+    return hbs
   end
   
-  def get_autor_zw_autor author_id
-    @con.query 'SELECT * FROM autoren WHERE autor=' + s(author_id) + ';'
+  def suche_tag tag
+    #ids der hoerbucher holen
+    res = @con.query "SELECT Hoerbuch.idHoerbuch as id from Tag,Hoerbuch,Tag_has_Hoerbuch where Tag.tag LIKE '%" + s(tag) + "%' and Tag.idTag = Tag_has_Hoerbuch.Tag_idTag and Hoerbuch.idHoerbuch = Tag_has_Hoerbuch.Hoerbuch_idHoerbuch;"
+    
+    hbs = Array.new
+    res.each_hash {|hb|
+      hbs << get_hb(hb['id'])
+    }
+    return hbs
+  end
+  
+  def suche_bewertung bw
+    #ids der hoerbucher holen
+    res = @con.query "SELECT Hoerbuch.idHoerbuch as id from Hoerbuch where Hoerbuch.bewertung >= " + s(bw)
+    
+    hbs = Array.new
+    res.each_hash {|hb|
+      hbs << get_hb(hb['id'])
+    }
+    return hbs
   end
   
   def suche_titel title
-    @con.query "SELECT * FROM titel WHERE titel LIKE '%" + s(title) + "%';"
+    #ids der hoerbucher holen
+    res = @con.query "SELECT Hoerbuch.idHoerbuch as id FROM Hoerbuch WHERE titel LIKE '%" + s(title) + "%';"
+    
+    hbs = Array.new
+    res.each_hash {|hb|
+      hbs << get_hb(hb['id'])
+    }
+    return hbs
   end
   
-  def get_hb_titel_id title_id
-    @con.query "SELECT * FROM hoerbuecher WHERE titel=" + s(title_id) + ";"
+  def get_dateien format_id
+    dateien = Array.new
+    res = @con.query "SELECT D.pfad as pfad, D.nummer as nummer ,D.laenge as laenge ,D.groesse as groesse from Datei D, CD, Format F where F.idFormat = " + s(format_id) + " and CD.Format_idFormat = F.idFormat and D.CD_idCD = CD.idCD"
+    res.each_hash {|d|
+      dateien << Datei.new(d['nummer'], d['pfad'], d['laenge'], d['groesse'])
+    }
+    return dateien
   end
   
-  def get_datei_zw_hb hb_id
-    @con.query 'SELECT * FROM dateien WHERE hoerbuch=' + s(hb_id) + ';'
-  end
-  
-  def get_datei file_id
-    @con.query 'SELECT * FROM datei WHERE id=' + s(file_id) + ';'
+  def get_format_id hb_id, format
+    res = @con.query "SELECT Format.idFormat as id from Format where Format.format = '" + s(format) + "' and Format.Hoerbuch_idHoerbuch = " + s(hb_id)
+    res.each_hash {|e|
+      return e['id']
+    }
   end
   
   def get_interpret interpret_id
@@ -142,67 +208,237 @@ class DBCon
     return id
   end
   
-  def clean_file_table table
-    col = table.sub 'datei_', ''
-    #alles einlesen
-    res = @con.query 'SELECT * FROM ' + s(table)
+  def get_autoren
+    autoren = Hash.new
+    res = @con.query "SELECT Autor.name as name,COUNT(Autor_has_Hoerbuch.Hoerbuch_idHoerbuch) as anz FROM Autor,Autor_has_Hoerbuch WHERE Autor_has_Hoerbuch.Autor_idAutor = Autor.idAutor GROUP BY Autor_has_Hoerbuch.Autor_idAutor ORDER BY name;"
     res.each_hash {|e|
-      exists = false
-      #überprüfen, ob die id des whatever in der tabelle datei steht
-      datei = @con.query 'SELECT * FROM datei WHERE ' + col + '=' + s(e['id']) + ';'
-      datei.each {|f| exists = true}
-      #wenn nicht, loschen
-      if !exists
-        #löschen
-        @con.query 'DELETE FROM ' + s(table) + ' WHERE id=' + s(e['id']) + ';'
-      end
+      autoren[e['name']] = e['anz']
     }
+    return autoren
   end
   
-  def clean_zw_table table
-    #alles einlesen
-    zw_table = 'sprechers' if table.eql? 'sprecher'
-    zw_table = 'autoren' if table.eql? 'autor'
-    res = @con.query 'SELECT * FROM ' + s(table)
+  def get_sprecher
+    sprecher = Hash.new
+    res = @con.query "SELECT Sprecher.name as name,COUNT(Sprecher_has_Hoerbuch.Hoerbuch_idHoerbuch) as anz FROM Sprecher,Sprecher_has_Hoerbuch WHERE Sprecher_has_Hoerbuch.Sprecher_idSprecher = Sprecher.idSprecher GROUP BY Sprecher_has_Hoerbuch.Sprecher_idSprecher ORDER BY name;"
     res.each_hash {|e|
-      exists = false
-      #überprüfen, ob die id in der zwischentabelle steht
-      verkn = @con.query 'SELECT * FROM ' + s(zw_table) + ' WHERE ' + s(table) + '=' + s(e['id']) + ';'
-      verkn.each {|f| exists = true}
-      #wenn nicht, loschen
-      if !exists
-        #löschen
-        #@con.query 'DELETE FROM ' + zw_table + ' WHERE id=' + s(e['id']) + ';'
-        @con.query 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
-        puts 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
-        @con.query 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
-        puts 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
-      end
+      sprecher[e['name']] = e['anz']
     }
+    return sprecher
   end
   
-  def clean_bewertung
-    bw_res = @con.query 'SELECT * FROM bewertung'
-    bw_res.each_hash {|e|
+  def get_stats
+    stats = Stats.new
+    #anzahl der hoerbücher
+    res = @con.query "SELECT COUNT(idHoerbuch) as anz FROM Hoerbuch;"
+    res.each_hash {|e|
+      stats.hb_ges = e['anz']
+    }
+    
+    #anzahl der dateien
+    res = @con.query "SELECT COUNT(idDatei) as anz FROM Datei;"
+    res.each_hash {|e|
+      stats.dateien_ges = e['anz']
+    }
+    
+    #gesamtgroesse aller dateien
+    res = @con.query "SELECT SUM(Datei.groesse) as gr FROM Datei;"
+    res.each_hash {|e|
+      stats.size_ges = e['gr']
+    }
+    
+    #gesamtlange aller dateien
+    res = @con.query "SELECT SUM(Datei.laenge) as le FROM Datei;"
+    res.each_hash {|e|
+      stats.laenge_ges = e['le']
+    }
+    
+    #durchschnittliche Bewertung
+    res = @con.query "SELECT AVG(Hoerbuch.bewertung) as bw FROM Hoerbuch;"
+    res.each_hash {|e|
+      stats.bw_avg = e['bw']
+    }
+    
+    #anzahl aller tags
+    res = @con.query "SELECT COUNT(Tag.idTag) as tags FROM Tag"
+    res.each_hash {|e|
+      stats.tags_ges = e['tags']
+    }
+    
+    #Durchschnittliche Anzahl der Autoren pro Hoerbuch
+    res = @con.query "SELECT AVG(a.res) as avg_aut FROM (SELECT COUNT(Autor_idAutor) AS res FROM Autor_has_Hoerbuch,Hoerbuch WHERE Hoerbuch.idHoerbuch = Autor_has_Hoerbuch.Hoerbuch_idHoerbuch GROUP BY Hoerbuch.idHoerbuch) a;"
+    res.each_hash {|e|
+      stats.avg_autoren_pro_hb = e['avg_aut']
+    }
+    
+    #Durchschnittliche Anzahl der Sprecher pro Hoerbuch
+    res = @con.query "SELECT AVG(a.res) as avg_spr FROM (SELECT COUNT(Sprecher_idSprecher) AS res FROM Sprecher_has_Hoerbuch,Hoerbuch WHERE Hoerbuch.idHoerbuch = Sprecher_has_Hoerbuch.Hoerbuch_idHoerbuch GROUP BY Hoerbuch.idHoerbuch) a;"
+    res.each_hash {|e|
+      stats.avg_sprecher_pro_hb = e['avg_spr']
+    }
+    
+    #Durchschnittliche Anzahl der Tags pro Hoerbuch
+    res = @con.query "SELECT AVG(a.res) as avg_tag FROM (SELECT COUNT(Tag_idTag) AS res FROM Tag_has_Hoerbuch,Hoerbuch WHERE Hoerbuch.idHoerbuch = Tag_has_Hoerbuch.Hoerbuch_idHoerbuch GROUP BY Hoerbuch.idHoerbuch) a;"
+    res.each {|e|
+      stats.avg_tags_pro_hb = e[0]
+    }
+    
+    #Durchschnittliche Anzahl Hoerbuecher pro Autor
+    res = @con.query "SELECT AVG(a.res) as avg_hb_aut FROM (SELECT COUNT(Hoerbuch_idHoerbuch) AS res FROM Autor_has_Hoerbuch,Autor WHERE Autor.idAutor = Autor_has_Hoerbuch.Autor_idAutor GROUP BY Autor.idAutor) a;"
+    res.each_hash {|e|
+      stats.avg_hb_pro_autor = e['avg_hb_aut']
+    }
+    
+    #Durchschnittliche Anzahl Hoerbuecher pro Sprecher
+    res = @con.query "SELECT AVG(a.res) as avg_hb_spr FROM (SELECT COUNT(Hoerbuch_idHoerbuch) AS res FROM Sprecher_has_Hoerbuch,Sprecher WHERE Sprecher.idSprecher = Sprecher_has_Hoerbuch.Sprecher_idSprecher GROUP BY Sprecher.idSprecher) a;"
+    res.each_hash {|e|
+      stats.avg_hb_pro_sprecher = e['avg_hb_spr']
+    }
+    
+    #Durchschnittliche Anzahl Hoerbuecher pro Tag
+    res = @con.query "SELECT AVG(a.res) as avg_hb_tag FROM (SELECT COUNT(Hoerbuch_idHoerbuch) AS res FROM Tag_has_Hoerbuch,Tag WHERE Tag.idTag = Tag_has_Hoerbuch.Tag_idTag GROUP BY Tag.idTag) a;"
+    res.each_hash {|e|
+      stats.avg_hb_pro_tag = e['avg_hb_tag']
+    }
+    return stats
+  end
+  
+  def update_sprecher hb_id, sprecher
+    #alte sprecher aus der zwischentabelle löschen
+    @con.query "DELETE FROM Sprecher_has_Hoerbuch where Hoerbuch_idHoerbuch = " + s(hb_id)
+    #sprecher aufräumen
+    clean_sprecher
+    #für jeden sprecher schauen ob er schon existiert, wenn nicht neu anlegen
+    sprecher.each {|e|
       gibt = false
-      hb_res = @con.query 'SELECT *FROM hoerbuecher WHERE id=' + s(e['id']) + ';'
-      hb_res.each {|f|
-        gibt = true
-      }
-      @con.query 'DELETE FROM bewertung WHERE id=' + s(e['id']) + ';' if !gibt
+      res = @con.query "SELECT Sprecher.idSprecher from Sprecher where name = '" + e + "';"
+      res.each_hash {|f| gibt = true}
+      if !gibt
+        #Sprecher anlegen
+        @con.query "INSERT INTO Sprecher(name) VALUES('" + e + "');"
+      end
+      #id des sprechers rausfinden, in die zwischentabelle schreiben
+      @con.query "INSERT INTO Sprecher_has_Hoerbuch VALUES(" + s(hb_id) + ",(SELECT Sprecher.idSprecher FROM Sprecher WHERE Sprecher.name = '" + e + "'))"
     }
   end
   
-  def clean_table table
-    res = @con.query 'SELECT * FROM ' + s(table)
-    res.each_hash {|e|
+  def update_autor hb_id, autor
+    #alte autoren aus der zwischentabelle löschen
+    @con.query "DELETE FROM Autor_has_Hoerbuch where Hoerbuch_idHoerbuch = " + s(hb_id)
+    #autoren aufräumen
+    clean_autoren
+    #für jeden sprecher schauen ob er schon existiert, wenn nicht neu anlegen
+    autor.each {|e|
       gibt = false
-      hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + s(e['id']) + ';'
-      hb_res.each {|f|
-        gibt = true
-      }
-      @con.query 'DELETE FROM ' + s(table) + ' WHERE id=' + s(e['id']) + ';' if !gibt
+      res = @con.query "SELECT Autor.idAutor FROM Autor WHERE name = '" + e + "';"
+      res.each_hash {|f| gibt = true}
+      if !gibt
+        #Sprecher anlegen
+        @con.query "INSERT INTO Autor(name) VALUES('" + e + "');"
+      end
+      #id des sprechers rausfinden, in die zwischentabelle schreiben
+      @con.query "INSERT INTO Autor_has_Hoerbuch VALUES((SELECT Autor.idAutor FROM Autor WHERE Autor.name = '" + e + "')," + s(hb_id) + ");"
+      #@con.query "INSERT INTO Autor_has_Hoerbuch VALUES(" + s(hb_id) + ",(SELECT LAST_INSERT_ID());"
     }
+  end
+  
+  def update_titel hb_id, titel
+    @con.query "UPDATE Hoerbuch SET titel = '" + s(titel) + "' WHERE Hoerbuch.idHoerbuch = " + s(hb_id)
+  end
+  
+  def add_tag hb_id, tag
+    tag = s(tag)
+    #gibts den tag schon? wenn ja id in die zwischentabelle schreiben, wenn nich neu anlegen
+    gibt = false
+    res = @con.query "SELECT Tag.idTag as id FROM Tag where tag='" + tag + "';"
+    res.each_hash {|e| gibt = true}
+    @con.query "INSERT INTO Tag(tag) VALUES('" + tag + "');" if !gibt
+    @con.query "INSERT INTO Tag_has_Hoerbuch VALUES((SELECT Tag.idTag FROM Tag WHERE Tag.tag = '" + tag + "')," + s(hb_id) + ");"
+  end
+
+  def remove_tag hb_id, tag
+    #tag aus zwischentabelle löschen
+    @con.query "DELETE FROM Tag_has_Hoerbuch where Tag_has_Hoerbuch.Hoerbuch_idHoerbuch = '" + s(hb_id) + "' AND Tag_has_Hoerbuch.Tag_idTag = (SELECT Tag.idTag FROM Tag WHERE Tag.tag = '" + s(tag) + "');"
+    #tags aufräumen
+    clean_tags
+  end
+  
+  #def clean_file_table table
+  #  col = table.sub 'datei_', ''
+  #  #alles einlesen
+  #  res = @con.query 'SELECT * FROM ' + s(table)
+  #  res.each_hash {|e|
+  #    exists = false
+  #    #überprüfen, ob die id des whatever in der tabelle datei steht
+  #    datei = @con.query 'SELECT * FROM datei WHERE ' + col + '=' + s(e['id']) + ';'
+  #    datei.each {|f| exists = true}
+  #    #wenn nicht, loschen
+  #    if !exists
+  #      #löschen
+  #      @con.query 'DELETE FROM ' + s(table) + ' WHERE id=' + s(e['id']) + ';'
+  #    end
+  #  }
+  #end
+  
+  #def clean_zw_table table
+  #  #alles einlesen
+  #  zw_table = 'sprechers' if table.eql? 'sprecher'
+  #  zw_table = 'autoren' if table.eql? 'autor'
+  #  res = @con.query 'SELECT * FROM ' + s(table)
+  #  res.each_hash {|e|
+  #    exists = false
+  #    #überprüfen, ob die id in der zwischentabelle steht
+  #    verkn = @con.query 'SELECT * FROM ' + s(zw_table) + ' WHERE ' + s(table) + '=' + s(e['id']) + ';'
+  #    verkn.each {|f| exists = true}
+  #    #wenn nicht, loschen
+  #    if !exists
+  #      #löschen
+  #      #@con.query 'DELETE FROM ' + zw_table + ' WHERE id=' + s(e['id']) + ';'
+  #      @con.query 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
+  #      #puts 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
+  #      @con.query 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
+  #      #puts 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
+  #    end
+  #  }
+  #end
+  
+  #def clean_bewertung
+  #  bw_res = @con.query 'SELECT * FROM bewertung'
+  #  bw_res.each_hash {|e|
+  #    gibt = false
+  #    hb_res = @con.query 'SELECT *FROM hoerbuecher WHERE id=' + s(e['id']) + ';'
+  #    hb_res.each {|f|
+  #      gibt = true
+  #    }
+  #    @con.query 'DELETE FROM bewertung WHERE id=' + s(e['id']) + ';' if !gibt
+  #  }
+  #end
+  #
+  #def clean_table table
+  #  res = @con.query 'SELECT * FROM ' + s(table)
+  #  res.each_hash {|e|
+  #    gibt = false
+  #    hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + s(e['id']) + ';'
+  #    hb_res.each {|f|
+  #      gibt = true
+  #    }
+  #    @con.query 'DELETE FROM ' + s(table) + ' WHERE id=' + s(e['id']) + ';' if !gibt
+  #  }
+  #end
+  
+  def clean_autor
+    @con.query 'DELETE FROM Autor WHERE idAutor NOT IN (SELECT Autor_has_Hoerbuch.Autor_idAutor FROM Autor_has_Hoerbuch);'
+  end
+  
+  def clean_sprecher
+    @con.query 'DELETE FROM Sprecher WHERE idSprecher NOT IN (SELECT Sprecher_has_Hoerbuch.Sprecher_idSprecher FROM Sprecher_has_Hoerbuch);'
+  end
+  
+  def clean_autoren
+    @con.query 'DELETE FROM Autor WHERE idAutor NOT IN (SELECT Autor_has_Hoerbuch.Autor_idAutor FROM Autor_has_Hoerbuch);'
+  end
+  
+  def clean_tags
+    @con.query 'DELETE FROM Tag WHERE idTag NOT IN (SELECT Tag_has_Hoerbuch.Tag_idTag FROM Tag_has_Hoerbuch)'
   end
   
   def remove_file file_id
@@ -222,7 +458,56 @@ class DBCon
   end
   
   def remove_hb hb_id
-    @con.query 'DELETE FROM hoerbuecher WHERE id=' + hb_id + ';'
+    #gibts die Autor(en) in noch nem andren Hoerbuch?
+    res = @con.query "SELECT Autor_has_Hoerbuch.Autor_idAutor as autor FROM Autor_has_Hoerbuch WHERE Autor_has_Hoerbuch.Hoerbuch_idHoerbuch = " + s(hb_id)
+    res.each_hash {|aut|
+      #autor und hoerbuch aus zwischentabelle löschen
+      @con.query "DELETE FROM Autor_has_Hoerbuch where Hoerbuch_idHoerbuch = " + s(hb_id) + " and Autor_idAutor = " + s(aut['autor'])
+      #für jeden autor schauen, ob er noch irgendwo existiert
+      hb_res = @con.query "SELECT Autor_has_Hoerbuch.Hoerbuch_idHoerbuch FROM Autor_has_Hoerbuch WHERE Autor_has_Hoerbuch.Autor_idAutor = " + aut['autor']
+      gibt = false
+      hb_res.each_hash {|e| gibt = true}
+      if !gibt
+        #Autor löschen
+        @con.query "DELETE FROM Autor WHERE Autor.idAutor = " + s(aut['autor'])
+      end
+    }
+    
+    #gibts den Sprecher in noch nem andren Hoerbuch?
+    res = @con.query "SELECT Sprecher_has_Hoerbuch.Sprecher_idSprecher as spr FROM Sprecher_has_Hoerbuch WHERE Sprecher_has_Hoerbuch.Hoerbuch_idHoerbuch = " + s(hb_id)
+    res.each_hash {|spr|
+      #sprecher und hoerbuch aus zwischentabelle löschen
+      @con.query "DELETE FROM Sprecher_has_Hoerbuch where Hoerbuch_idHoerbuch = " + s(hb_id) + " and Sprecher_idSprecher = " + s(spr['spr'])
+      #für jeden sprecher schauen, ob er noch irgendwo existiert
+      hb_res = @con.query "SELECT Sprecher_has_Hoerbuch.Hoerbuch_idHoerbuch FROM Sprecher_has_Hoerbuch WHERE Sprecher_has_Hoerbuch.Sprecher_idSprecher = " + spr['spr']
+      gibt = false
+      hb_res.each_hash {|e| gibt = true}
+      if !gibt
+        #Autor löschen
+        @con.query "DELETE FROM Sprecher WHERE Sprecher.idSprecher = " + s(spr['spr'])
+      end
+    }
+    
+    #gibts den Tag noch woanders?
+    res = @con.query "SELECT Tag_has_Hoerbuch.Tag_idTag as tag FROM Tag_has_Hoerbuch WHERE Tag_has_Hoerbuch.Hoerbuch_idHoerbuch = " + s(hb_id)
+    res.each_hash {|tag|
+      #tag und hoerbuch aus zwischentabelle löschen
+      @con.query "DELETE FROM Tag_has_Hoerbuch where Hoerbuch_idHoerbuch = " + s(hb_id) + " and Tag_idTag = " + s(tag['tag'])
+      #für jeden tag schauen, ob er noch irgendwo existiert
+      hb_res = @con.query "SELECT Tag_has_Hoerbuch.Hoerbuch_idHoerbuch FROM Tag_has_Hoerbuch WHERE Tag_has_Hoerbuch.Tag_idTag = " + s(tag['tag'])
+      gibt = false
+      hb_res.each_hash {|e| gibt = true}
+      if !gibt
+        #tag löschen
+        @con.query "DELETE FROM Tag WHERE Tag.idTag = " + s(tag['tag'])
+      end
+    }
+    
+    @con.query "DELETE FROM Hoerbuch where Hoerbuch.idHoerbuch = " + s(hb_id)
+  end
+  
+  def remove_formate hb_id
+    @con.query "DELETE FROM Format where Hoerbuch_idHoerbuch = " + s(hb_id) + ";"
   end
   
   def count table
@@ -238,14 +523,14 @@ class DBCon
   end
   
   def update_zw table, col, val_new, val_old, hb_id
-    puts 'UPDATE ' + s(table) + ' SET ' + s(col) + "='" + s(val_new) + "' WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
+    #puts 'UPDATE ' + s(table) + ' SET ' + s(col) + "='" + s(val_new) + "' WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
     @con.query 'UPDATE ' + s(table) + ' SET ' + s(col) + "=" + s(val_new) + " WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
   end
   
   def ins table, col, val
     pst = @con.prepare 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(?)'
     pst.execute s(val)
-    puts 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(' + s(val) + ')'
+    #puts 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(' + s(val) + ')'
   end
   
   def ins_zw table, col1, col2, val1, val2
@@ -253,6 +538,7 @@ class DBCon
     #val2 ist das array mit den Autoren/Sprechern drin
     pst = @con.prepare 'INSERT INTO ' + s(table) + '(' + s(col1) + ',' + s(col2) + ') VALUES(?, ?)'
     val2.each {|e|
+      #puts 'INSERT INTO ' + s(table) + '(' + s(col1) + ',' + s(col2) + ') VALUES(' + s(val1) + ',' + s(e) + ')'
       pst.execute val1, e
     }
   end
@@ -261,9 +547,14 @@ class DBCon
     @con.query 'SELECT * FROM ' + s(table) + ' WHERE ' + s(col) + '="' + s(val) + '";'
   end
   
-  def ins_hb title, path, rating, pos
-    pst = @con.prepare 'INSERT INTO hoerbuecher(titel, pfad, bewertung, position) VALUES(?, ?, ?, ?)'
-    pst.execute title, path, rating, pos
+  def ins_hb title, path, rating
+    pst = @con.prepare 'INSERT INTO Hoerbuch(titel, pfad, bewertung) VALUES(?, ?, ?)'
+    pst.execute title, path, rating
+    #id des hoerbuchs zurückgeben
+    id_res = @con.query 'SELECT LAST_INSERT_ID();'
+    hb_id = 0
+    id_res.each {|e| hb_id = e[0]}
+    return hb_id.to_i
   end
   
   def ins_file path, title, length, size, number, album, interpret, year, genre
@@ -289,5 +580,38 @@ class DBCon
   
   def get_all table
     @con.query 'SELECT * FROM ' + table
+  end
+  
+  def ins_format hoerbuch_id, format
+    #format anlegen
+    pst = @con.prepare 'INSERT INTO Format(Hoerbuch_idHoerbuch,format) VALUES(?,?)'
+    pst.execute hoerbuch_id, format.format
+    #id des formats bestimmen
+    id_res = @con.query 'SELECT LAST_INSERT_ID();'
+    format_id = 0
+    id_res.each {|e| format_id = e[0].to_i}
+    #puts format_id
+    
+    #cds anlegen
+    #ueber die cds iterieren
+    format.cds.each {|cd_akt|
+      nummer = cd_akt.nummer
+      pfad = cd_akt.pfad
+      #cd in die datenbank schreiben
+      pst = @con.prepare 'INSERT INTO CD(nummer,pfad,Format_IdFormat) VALUES(?,?,?)'
+      pst.execute nummer, pfad, format_id
+      #id der datei bestimmen
+      id_res = @con.query 'SELECT LAST_INSERT_ID();'
+      cd_id = 0
+      id_res.each {|e| cd_id = e[0].to_i}
+      
+      #dateien anlegen
+      #ueber die dateien iterieren
+      cd_akt.dateien.each {|datei_akt|
+        #datei in die datenbank schreiben
+        pst = @con.prepare 'INSERT INTO Datei(nummer,pfad,CD_IdCD,groesse,laenge) VALUES(?,?,?,?,?)'
+        pst.execute datei_akt.nummer, datei_akt.pfad, cd_id, datei_akt.groesse, datei_akt.laenge
+      }
+    }
   end
 end
