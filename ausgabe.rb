@@ -125,9 +125,11 @@ class Ausgabe
     }
     
     formate = ''
-    size.each {|e|
-      formate += e[0] + ': ' + calc_size(e[1])
-    }
+    if !size.nil?   
+      size.each {|e|
+        formate += e[0] + ': ' + calc_size(e[1])
+      }
+    end
     
     out.gsub! "%tb", "\t"
     out.gsub! "%id", hb.id.to_s

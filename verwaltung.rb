@@ -15,7 +15,11 @@ class Verwaltung
   end
   
   def get_dateien hb_id, format
-    return @dbcon.get_dateien(@dbcon.get_format_id(hb_id, format))
+    @dbcon.get_dateien(@dbcon.get_format_id(hb_id, format))
+  end
+  
+  def get_format_id hb_id, format
+    @dbcon.get_format_id hb_id, format
   end
   
   def suche_bewertung bw
@@ -153,7 +157,7 @@ class Verwaltung
   end
   
   def get_hb_laenge hb_id
-    return @dbcon.get_hb_laenge hb_id
+    @dbcon.get_hb_laenge hb_id
   end
   
   def get_stats
@@ -270,10 +274,15 @@ class Verwaltung
     @dbcon.get_last_pos hb_id
   end
   
-  def play hb_id, start, ende
+  def pfad pfad
+    @einst.basedir + pfad
+  end
+  
+  def play hb_id, format, start, ende
     #alle benötigten dateien in ein array schieben
-    dateien = get_dateien hb_id
+    dateien = get_dateien hb_id, format
     #alle längen der dateien addieren, bis sie größer als start ist
+    
     laenge = 0
     start_index = 0
     skip = 0
@@ -287,7 +296,7 @@ class Verwaltung
     }
     #ab start_index alle addieren bis die laenge größer als ende ist
     end_index = 0
-    skip_end = 0
+    #skip_end = 0
     dateien.each_with_index {|d,i|
       if i > start_index
         laenge += d.laenge.to_i
@@ -297,7 +306,6 @@ class Verwaltung
       if ende < laenge
         stop = skip+(ende-start)
         stop = ende-(laenge-d.laenge.to_i)
-        puts stop
         end_index = start_index if i == 0
         break
       end
@@ -307,26 +315,28 @@ class Verwaltung
       stop = skip+(ende-start)
     end
     
+    puts "end_index: " + end_index
+    
     #playeroptionen feststellen
     player = @einst.player.split('/')[-1]
     case player
     when 'mpv'
       if end_index == start_index
-        puts @einst.player + ' --start=' + skip.to_s + ' --end=' + stop.to_s + ' "' + dateien[start_index].pfad + '"'
-        system @einst.player + ' --start=' + skip.to_s + ' --end=' + stop.to_s + ' "' + dateien[start_index].pfad + '"'
+        puts @einst.player + ' --start=' + skip.to_s + ' --end=' + stop.to_s + ' "' + pfad(dateien[start_index].pfad) + '"'
+        system @einst.player + ' --start=' + skip.to_s + ' --end=' + stop.to_s + ' "' + pfad(dateien[start_index].pfad) + '"'
       elsif end_index != 0
-        puts @einst.player + ' --start=' + skip.to_s + ' "' + dateien[start_index].pfad + '"'
-        system @einst.player + ' --start=' + skip.to_s + ' "' + dateien[start_index].pfad + '"'
+        puts @einst.player + ' --start=' + skip.to_s + ' "' + pfad(dateien[start_index].pfad) + '"'
+        system @einst.player + ' --start=' + skip.to_s + ' "' + pfad(dateien[start_index].pfad) + '"'
         dateien.each_with_index {|e,i|
           puts 'i: ' + i.to_s
           puts 'start_index: ' + start_index.to_s
           puts 'end_index: ' + stop.to_s
           if i > start_index and i < end_index
-            system @einst.player + ' "' + dateien[i].pfad + '"'
+            system @einst.player + ' "' + pfad(dateien[i].pfad) + '"'
           end
         }
-        puts @einst.player + ' --end=' + stop.to_s + ' "' + dateien[end_index].pfad + '"'
-        system @einst.player + ' --end=' + stop.to_s + ' "' + dateien[end_index].pfad + '"'
+        puts @einst.player + ' --end=' + stop.to_s + ' "' + pfad(dateien[end_index].pfad) + '"'
+        system @einst.player + ' --end=' + stop.to_s + ' "' + pfad(dateien[end_index].pfad) + '"'
       end
     end
   end

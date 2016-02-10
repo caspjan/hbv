@@ -5,7 +5,7 @@ class Pfad_Parser
   
   def initialize hb_ordner, einst
     @einst = einst
-    @ordner = @einst.basedir + hb_ordner
+    @ordner = @einst.basedir + '/' + hb_ordner
   end
   
   def parse

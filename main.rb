@@ -4,12 +4,14 @@ require_relative 'require'
 class Main
   def initialize
     @args = Slop.parse { |o|
-    o.string '-a', '--author', 'the author to search for'
-    o.string '-s', '--speaker', 'the speaker to search for'
-    o.string '-t', '--title', 'the title to search for'
-    o.integer '-b', '--rating', 'print all audiobooks with rating (0-10)'
-    o.string '-tag', '--tag', 'the tag to search for'
-    o.array '-i', '--insert', 'insert new audiobook into database; title,author:author2,speaker:speaker2,path,rating,tag1:tag2:tag3.. (NO spaces)'
+    o.string '-a', '--author', 'the author to search for (auto) or to insert when in insert mode'
+    o.string '-s', '--speaker', 'the speaker to search for (auto) or to insert when in insert mode'
+    o.string '-t', '--title', 'the title to search for (auto) or to insert when in insert mode'
+    o.integer '-b', '--rating', 'print all audiobooks with rating (0-10) (auto) or to insert when in insert mode'
+    o.string '-tag', '--tag', 'the tag to search for (auto) or to insert when in insert mode'
+    o.string '-pa', '--path', 'the path to insert'
+    o.bool '-i', '--insert', 'insert mode; -a is autor to insert and so on'
+    o.array '-is', '--insert-single', 'insert new audiobook into database; title,author:author2,speaker:speaker2,path,rating,tag1:tag2:tag3.. (NO spaces)'
     o.on '-h', '--help', 'display this help' do
       puts o
     end
@@ -21,6 +23,7 @@ class Main
     o.string '--files', 'print all files of the audiobook with given format. Example: --files mp3'
     o.bool '--init-db', 'create all needed tables'
     o.bool '--stats', 'print stats'
+    o.string '-bd', '--basedir', 'temporarily change basedir'
     o.bool '-ga', '--get-authors', 'print all authors and the number of audiobooks.'
     o.bool '-gs', '--get-speaker', 'print all speaker and the number of audiobooks.'
     o.bool '-gb', '--get-basedir', 'Basispfad der Hörbuchsammlung ausgeben'
@@ -30,10 +33,10 @@ class Main
     o.array '-up', '--update-path', 'update the path of audiobook. First argument is the id of audiobook, second is the new path.'
     o.array '-at', '--add-tag', 'add tag to audiobook. First arg is the id of audiobook, second is new tag'
     o.array '-rt', '--remove-tag', 'remove tag from audiobook. First arg is the id of audiobook, second is tag to remove'
-    o.array '-p', '--play', 'play audiobook. Needs ID of audiobook, start and end. Example: "-p 1,0,3600": Play the first hour of the audiobook. Same as "-p 1,0,1h". Time can be in Hours (h), minutes (m). Standard is seconds. Example: "-p 1,1h23m45,5000". Same as "-p 1,1h23m45s,5000". * Can be used to mark the end: "-p 1,0,*". Plays from start to end. r means resume form last postion Example: "-p 1,r,*"'
+    o.array '-p', '--play', 'play audiobook. Needs ID of audiobook, format, start and end. Example: "-p 1,mp3,0,3600": Play the first hour of the audiobook. Same as "-p 1,mp3,0,1h". Time can be in Hours (h), minutes (m). Standard is seconds. Example: "-p 1,flac,1h23m45,5000". Same as "-p 1,mp3,1h23m45s,5000". * Can be used to mark the end: "-p 1,wav,0,*". Plays from start to end. r means resume form last postion Example: "-p 1,mp3,r,*"'
     } 
     
-    einst_pars = Einstellung_Parser.new '/home/jan/Dokumente/Programmierzeug/Hoerbuch/hoerbuch.conf'
+    einst_pars = Einstellung_Parser.new '/home/jan/Dokumente/Programmierzeug/hbv/hoerbuch.conf'
     @einst = einst_pars.einst
     
     if @args[:'init-db']
@@ -89,6 +92,11 @@ class Main
       end
     end 
     
+    if @args[:basedir]
+      @einst.basedir = @args[:basedir]
+    end
+    
+    
     if @args[:ga]
       @ausg.autoren_aus @verw.get_autoren
     end
@@ -101,77 +109,87 @@ class Main
       puts @einst.basedir
     end
     
-    
-    if @args[:p]
+    if @args[:play].length != 0
       #checken, ob das array die richtige laenge hat
       p = @args[:p]
-      if p.length == 3
-        hb = @verw.get_hb p[0]
+      if p.length == 4
+        hb_id = p[0]
+        format = p[1]
+        hb = @verw.get_hb hb_id
         if !hb.nil?     
-          id = p[0]
-          start = 0
-          ende = 0
-          2.times {|i| 
-            #sekunden bestimmen
-            i += 1
-            if p[i].include? 'h' 
-              teile = p[i].split 'h'
-              sek = teile[0].to_i*3600
-              h = true
-            elsif p[i].include? 'H'
-              teile = p[i].split 'H'
-              sek = teile[0].to_i*3600
-              h = true
+          #gibts das hoerbuch im angegebenen format?
+          f_id = @verw.get_format_id(hb_id, format)
+          if !f_id.nil?
+            start = 0
+            ende = 0
+            for i in 2..3
+              #sekunden bestimmen
+              if p[i].include? 'h' 
+                teile = p[i].split 'h'
+                sek = teile[0].to_i*3600
+                h = true
+              elsif p[i].include? 'H'
+                teile = p[i].split 'H'
+                sek = teile[0].to_i*3600
+                h = true
+              end
+              
+              if p[i].include? 'm'
+                teile1 = teile[1].split 'm'
+                sek += teile1[0].to_i*60
+                m = true
+              elsif p[i].include? 'M'
+                teile1 = teile[i].split 'M'
+                sek += teile1[0].to_i*60
+                m = true
+              end
+              
+              if p[i].include? 's' or p[1].include? 'S'
+                s = teile1[i].chop if !teile1.nil?
+                s = teile[i].chop if teile1.nil?
+                sek += s.to_i
+                sek = p[i].chop if teile.nil?
+                s = true
+              end
+              
+              if !h and !m and !s
+                sek = p[i].to_s
+              end
+              
+              start = sek if i == 2
+              ende = sek if i == 3
+            end
+            start = @verw.get_last_pos hb_id if p[2].eql? 'r'
+            if p[3].eql? '*'
+              ende = @verw.get_hb_laenge hb_id
             end
             
-            if p[i].include? 'm'
-              teile1 = teile[1].split 'm'
-              sek += teile1[0].to_i*60
-              m = true
-            elsif p[i].include? 'M'
-              teile1 = teile[i].split 'M'
-              sek += teile1[0].to_i*60
-              m = true
-            end
+            puts "Start: " + start
+            puts "Ende: " + ende
             
-            if p[i].include? 's' or p[1].include? 'S'
-              s = teile1[i].chop if !teile1.nil?
-              s = teile[i].chop if teile1.nil?
-              sek += s.to_i
-              sek = p[i].chop if teile.nil?
-              s = true
+            t1 = Thread.new {
+              Thread.current['fertig'] = false
+              @verw.play hb_id, format, start.to_i, ende.to_i
+              Thread.current['fertig'] = true
+            }
+            pos = start.to_i
+            while !t1['fertig']
+              #if !t1['fertig'].nil?
+                @verw.up_pos hb_id, pos
+              #end
+              pos += 5
+              sleep 5
             end
-            
-            if !h and !m and !s
-              sek = p[i].to_s
-            end
-            
-            start = sek if i == 1
-            ende = sek if i == 2
-          }
-          start = @verw.get_last_pos id
-          if p[2].eql? '*'
-            ende = @verw.get_hb_laenge @verw.get_dateien p[0]
+            t1.join
+            @verw.up_pos hb_id, ende
+          else
+            puts "Format nicht gefunden."
           end
-          t1 = Thread.new {
-            @verw.play id, start.to_i, ende.to_i
-            Thread.current['fertig'] = true
-          }
-          pos = start.to_i
-          while t1['fertig'].nil?
-            pos += 5
-            sleep 5
-            if !t1['fertig'].nil?
-              @verw.up_pos id, pos
-            end
-          end
-          t1.join
-          @verw.up_pos id, ende
         else
-          puts 'Nothing found.'
+          puts 'Hoerbuch nicht gefunden.'
         end
       else
-        #puts @args
+        puts "Falsche Anzahl Argumente."
       end
     end
     
@@ -329,7 +347,9 @@ class Main
     
     if @args[:fd]
       res = @verw.full_dump
-      res.each {|e| @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id)}
+      res.each {|e|
+        puts e.id
+        @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id)}
     end
     
     if @args[:remove]
@@ -354,28 +374,28 @@ class Main
       end
     end
     
-    if @args[:author]
+    if @args[:author] and !@args[:insert]
       res = @verw.suche_autor @args[:author]
       res.each {|f| @ausg.aus f, files?(f.id), size?(f.id), laenge?(f.id) }
     end
     
-    if @args[:tag]
+    if @args[:tag] and !@args[:insert]
       res = @verw.suche_tag @args[:tag]
       res.each {|f| @ausg.aus f, files?(f.id), size?(f.id), laenge?(f.id) }
     end
     
     
-    if @args[:title]
+    if @args[:title] and !@args[:insert]
       res = @verw.suche_titel @args[:title]
       res.each {|e| @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id)}
     end
     
-    if @args[:speaker]
+    if @args[:speaker] and !@args[:insert]
       res = @verw.suche_sprecher @args[:speaker]
       res.each {|f| @ausg.aus f, files?(f.id), size?(f.id), laenge?(f.id) }
     end
     
-    if @args[:rating]
+    if @args[:rating] and !@args[:insert]
       res = @verw.suche_bewertung @args[:rating]
       res.each {|e| @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id) }
     end
@@ -389,8 +409,35 @@ class Main
       end
     end
     
+    #einfügen mit mehreren argumenten
     if @args[:insert]
-      ins = @args[:insert]
+      #checken, ob alle args da sind
+      if @args[:author] and @args[:title] and @args[:speaker] and @args[:path] and @args[:rating] and @args[:tag]
+        autoren = @args[:author].split ':'
+        sprecher = @args[:speaker].split ':'
+        tags = @args[:tag].split ':'
+        pfad = @einst.basedir + '/' + @args[:path]
+        #checken, obs den pfad gibt
+        if Pathname.new(pfad).exist?
+          hb_new = Hoerbuch.new 0, @args[:title], autoren, sprecher, @args[:path], @args[:rating], tags
+          #ausgeben zum checken
+          @ausg.aus hb_new, nil, nil, nil
+          if sure?
+            @verw.hoerbuch_einfuegen hb_new
+          else
+            puts "cancelled."
+          end
+        else
+          puts "Den Ordner gibts ned."
+        end
+        
+      end
+      
+    end
+    
+    
+    if @args[:is]
+      ins = @args[:is]
       if ins.length > 0
         #leerzeichen entfernen
         neu = Array.new
@@ -434,7 +481,7 @@ end
 #begin
   Main.new
 #rescue Mysql::Error => e
-#  #connection refused
+  #connection refused
 #  if e.errno == 2002
 #    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
 #  #keine rechte

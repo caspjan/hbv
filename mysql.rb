@@ -171,10 +171,12 @@ class DBCon
   end
   
   def get_format_id hb_id, format
+    fid = nil
     res = @con.query "SELECT Format.idFormat as id from Format where Format.format = '" + s(format) + "' and Format.Hoerbuch_idHoerbuch = " + s(hb_id)
     res.each_hash {|e|
-      return e['id']
+      fid = i(e['id'])
     }
+    return fid
   end
   
   def get_interpret interpret_id
@@ -362,69 +364,6 @@ class DBCon
     clean_tags
   end
   
-  #def clean_file_table table
-  #  col = table.sub 'datei_', ''
-  #  #alles einlesen
-  #  res = @con.query 'SELECT * FROM ' + s(table)
-  #  res.each_hash {|e|
-  #    exists = false
-  #    #überprüfen, ob die id des whatever in der tabelle datei steht
-  #    datei = @con.query 'SELECT * FROM datei WHERE ' + col + '=' + s(e['id']) + ';'
-  #    datei.each {|f| exists = true}
-  #    #wenn nicht, loschen
-  #    if !exists
-  #      #löschen
-  #      @con.query 'DELETE FROM ' + s(table) + ' WHERE id=' + s(e['id']) + ';'
-  #    end
-  #  }
-  #end
-  
-  #def clean_zw_table table
-  #  #alles einlesen
-  #  zw_table = 'sprechers' if table.eql? 'sprecher'
-  #  zw_table = 'autoren' if table.eql? 'autor'
-  #  res = @con.query 'SELECT * FROM ' + s(table)
-  #  res.each_hash {|e|
-  #    exists = false
-  #    #überprüfen, ob die id in der zwischentabelle steht
-  #    verkn = @con.query 'SELECT * FROM ' + s(zw_table) + ' WHERE ' + s(table) + '=' + s(e['id']) + ';'
-  #    verkn.each {|f| exists = true}
-  #    #wenn nicht, loschen
-  #    if !exists
-  #      #löschen
-  #      #@con.query 'DELETE FROM ' + zw_table + ' WHERE id=' + s(e['id']) + ';'
-  #      @con.query 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
-  #      #puts 'DELETE FROM ' + zw_table + ' WHERE ' + table + '=' + e['id'] + ';'
-  #      @con.query 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
-  #      #puts 'DELETE FROM ' + table + ' WHERE id=' + e['id'] + ';'
-  #    end
-  #  }
-  #end
-  
-  #def clean_bewertung
-  #  bw_res = @con.query 'SELECT * FROM bewertung'
-  #  bw_res.each_hash {|e|
-  #    gibt = false
-  #    hb_res = @con.query 'SELECT *FROM hoerbuecher WHERE id=' + s(e['id']) + ';'
-  #    hb_res.each {|f|
-  #      gibt = true
-  #    }
-  #    @con.query 'DELETE FROM bewertung WHERE id=' + s(e['id']) + ';' if !gibt
-  #  }
-  #end
-  #
-  #def clean_table table
-  #  res = @con.query 'SELECT * FROM ' + s(table)
-  #  res.each_hash {|e|
-  #    gibt = false
-  #    hb_res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + s(e['id']) + ';'
-  #    hb_res.each {|f|
-  #      gibt = true
-  #    }
-  #    @con.query 'DELETE FROM ' + s(table) + ' WHERE id=' + s(e['id']) + ';' if !gibt
-  #  }
-  #end
-  
   def clean_autor
     @con.query 'DELETE FROM Autor WHERE idAutor NOT IN (SELECT Autor_has_Hoerbuch.Autor_idAutor FROM Autor_has_Hoerbuch);'
   end
@@ -568,14 +507,16 @@ class DBCon
   end
   
   def up_pos hb_id, pos
-    @con.query 'UPDATE hoerbuecher SET position=' + s(pos) + ' WHERE id=' + s(hb_id) + ';'
+    @con.query 'UPDATE Hoerbuch SET position=' + s(pos) + ' WHERE idHoerbuch = ' + s(hb_id) + ';'
   end
   
   def get_last_pos hb_id
-    res = @con.query 'SELECT * FROM hoerbuecher WHERE id=' + hb_id + ';'
+    pos = -1
+    res = @con.query 'SELECT position as pos FROM Hoerbuch WHERE idHoerbuch=' + hb_id + ';'
     res.each_hash {|e|
-      return e['position']
+      pos = e['pos']
     }
+    return pos
   end
   
   def get_all table
