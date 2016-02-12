@@ -124,6 +124,8 @@ class Ausgabe
       end
     }
     
+    puts size
+    
     formate = ''
     if !size.nil?   
       size.each {|e|

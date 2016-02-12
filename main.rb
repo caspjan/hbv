@@ -8,14 +8,14 @@ class Main
     o.string '-s', '--speaker', 'the speaker to search for (auto) or to insert when in insert mode'
     o.string '-t', '--title', 'the title to search for (auto) or to insert when in insert mode'
     o.integer '-b', '--rating', 'print all audiobooks with rating (0-10) (auto) or to insert when in insert mode'
-    o.string '-tag', '--tag', 'the tag to search for (auto) or to insert when in insert mode'
+    o.string '-g', '--tag', 'the tag to search for (auto) or to insert when in insert mode'
     o.string '-pa', '--path', 'the path to insert'
     o.bool '-i', '--insert', 'insert mode; -a is autor to insert and so on'
     o.array '-is', '--insert-single', 'insert new audiobook into database; title,author:author2,speaker:speaker2,path,rating,tag1:tag2:tag3.. (NO spaces)'
     o.on '-h', '--help', 'display this help' do
       puts o
     end
-    o.bool '-cdb', '--clear-db', 'clear whole database'
+    o.bool '-c', '--clear-db', 'clear whole database'
     o.bool '-f', '--force', "don't ask"
     o.string '-r', '--remove', '[id] remove audiobook from database'
     o.string '-id', '--get-id', '[id] get audiobook by id'

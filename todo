@@ -1,9 +1,13 @@
 Bugs:
 -Größe und Länge in ausgabe.rb beim einfügen von hörbüchern nicht ausgeben
--Kommas in Namen erlauben beim einfügen
+-bei mehreren Formaten die größe schöner ausgeben (mit kommas getrennt oder so)
+
+-es wird nur ein format erkannt
 
 Features:
--größe pro format ausgeben
+-abspielen
+-ladebalken beim einfügen von hörbüchern
+
 
 Performance:
 -remove tag performanter machen

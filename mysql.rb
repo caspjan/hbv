@@ -61,7 +61,7 @@ class DBCon
 
   def get_hb_size hb_id
     formate = Hash.new
-    res = @con.query 'SELECT sum(D.groesse) AS size, F.format as format FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id)
+    res = @con.query 'SELECT sum(D.groesse) AS size, F.format as format FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id) + ' group by F.idFormat'
     res.each_hash {|e|
       formate[e['format']] = e['size']
     }
@@ -169,6 +169,22 @@ class DBCon
     }
     return dateien
   end
+  
+  #def get_dateien_komplett hb_id
+  #  dateien_tmp = Array.new
+  #  dateien = Hash.new
+  #  format_res = @con.query "SELECT Format.idFormat as id, Format.format as f FROM Format where Format.Hoerbuch_idHoerbuch = " + s(hb_id) + ";"
+  #  format_res.each_hash {|format|
+  #    #für jedes format die dateien holen
+  #    dateien_res = @con.query "SELECT D.pfad as pfad, D.nummer as nummer ,D.laenge as laenge ,D.groesse as groesse from Datei D, CD, Format F where F.idFormat = " + s(format['id']) + " and CD.Format_idFormat = F.idFormat and D.CD_idCD = CD.idCD"
+  #    dateien_res.each_hash {|d|
+  #      dateien_tmp << Datei.new(d['nummer'], d['pfad'], d['laenge'], d['groesse'])
+  #    }
+  #    dateien[format['f']] = dateien_tmp
+  #    dateien_tmp.clear
+  #  }
+  #  return dateien
+  #end
   
   def get_format_id hb_id, format
     fid = nil
