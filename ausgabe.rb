@@ -124,12 +124,14 @@ class Ausgabe
       end
     }
     
-    puts size
-    
     formate = ''
     if !size.nil?   
-      size.each {|e|
+      size.each_with_index {|e,i|
         formate += e[0] + ': ' + calc_size(e[1])
+        if i < size.length-1
+          formate += ', '
+        end
+        
       }
     end
     

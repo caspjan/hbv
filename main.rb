@@ -348,7 +348,6 @@ class Main
     if @args[:fd]
       res = @verw.full_dump
       res.each {|e|
-        puts e.id
         @ausg.aus e, files?(e.id), size?(e.id), laenge?(e.id)}
     end
     
