@@ -317,6 +317,25 @@ class DBCon
     res.each_hash {|e|
       stats.avg_hb_pro_tag = e['avg_hb_tag']
     }
+    
+    #Groesse der Datenbank
+    res = @con.query "SELECT table_schema 'DB', Round(Sum(data_length + index_length), 1) 'size' FROM information_schema.tables where table_schema = '" + @einst.db + "';"
+    res.each_hash {|e|
+      stats.db_size = e['size']
+    }
+    
+    #Durchschnittliche Anzahl Formate pro Hoerbuch
+    res = @con.query "SELECT AVG(a.res) as avg_f_hb FROM (SELECT COUNT(Format.Hoerbuch_idHoerbuch) as res FROM Format GROUP BY Format.Hoerbuch_idHoerbuch) a;"
+    res.each_hash {|e|
+      stats.avg_format_pro_hb = e['avg_f_hb']
+    }
+    
+    #Durchschnittliche Anzahl Hoerbuch pro Format
+    res = @con.query "SELECT AVG(a.res) as avg_hb_f FROM (SELECT COUNT(Format.format) as res FROM Format GROUP BY Format.format) a;"
+    res.each_hash {|e|
+      stats.avg_hb_pro_format = e['avg_hb_f']
+    }
+    
     return stats
   end
   
@@ -360,7 +379,7 @@ class DBCon
   end
   
   def update_titel hb_id, titel
-    @con.query "UPDATE Hoerbuch SET titel = '" + s(titel) + "' WHERE Hoerbuch.idHoerbuch = " + s(hb_id)
+    @con.query "UPHoerbuchrbuch SET titel = '" + s(titel) + "' WHERE Hoerbuch.idHoerbuch = " + s(hb_id)
   end
   
   def add_tag hb_id, tag

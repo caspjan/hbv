@@ -79,6 +79,9 @@ class Ausgabe
     out = @stats_format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
     out.gsub! "%ha", stats.avg_hb_pro_autor
+    out.gsub! "%hf", stats.avg_hb_pro_format
+    out.gsub! "%fh", stats.avg_format_pro_hb
+    out.gsub! "%db", calc_size(stats.db_size)
     out.gsub! "%hs", stats.avg_hb_pro_sprecher
     out.gsub! "%ht", stats.avg_hb_pro_tag
     out.gsub! "%ah", stats.avg_autoren_pro_hb
