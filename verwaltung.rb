@@ -47,8 +47,38 @@ class Verwaltung
   end
   
   def hoerbuch_einfuegen hb
+    #checken ob es ein Format und eine CD gibt
+    pfad = Pathname.new @einst.basedir + hb.pfad
+    gibt_formate = false
+    pfad.children.each {|e|
+      gibt_formate = true if @einst.datei_endungen.include? e.basename.to_s.prepend "."
+    }
+    raise "Im Angegebenen Pfad gibt es kein passendendes Format." if !gibt_formate
+    
+    gibt_cd = false
+    gibt_dateien = false
+    pfad.children.each {|e|
+      if @einst.datei_endungen.include? e.basename.to_s.prepend "."
+        e.children.each {|f|
+          gibt_cd = tmp = true if f.basename.to_s.include? "CD" or f.basename.to_s.include? "cd" or f.basename.to_s.include? "Cd" or f.basename.to_s.include? "cD"
+          if tmp
+            f.children.each {|g|
+              gibt_dateien = true if g.extname.eql?(e.basename.to_s.prepend("."))
+              puts g
+              puts g.extname
+            }
+          end
+          tmp = false
+        }
+      end 
+    }
+    raise "Im Angegebenen Pfad gibt es kein Format mit einer CD drin." if !gibt_cd
+    raise "Es wurde keine passende Datei gefunden." if !gibt_dateien
+    
+    #formate einlesen
+    pp = Pfad_Parser.new hb.pfad, @einst
+    formate = pp.parse
     #id des neuen hoerbuchs bestimmen
-    #new_id = @dbcon.calc_next_id 'Hoerbuch'
     #über die autoren des hörbuchs iterieren
     autor_ids = Array.new
     hb.autor.each {|e|
@@ -96,9 +126,7 @@ class Verwaltung
     #verküpfung für jeden tag einfügen
     @dbcon.ins_zw 'Tag_has_Hoerbuch', 'Hoerbuch_idHoerbuch', 'Tag_idTag', hb_id, tag_ids
     
-    #formate einlesen
-    pp = Pfad_Parser.new hb.pfad, @einst
-    formate = pp.parse
+   
     formate.each {|format|
       #format inkl allen cds und dateien in die datenbank schreiben
       @dbcon.ins_format hb_id, format

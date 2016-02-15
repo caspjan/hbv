@@ -9,6 +9,7 @@ class Datei_Meta_Parser
   
   def parse
     datei = File.new @pfad
+    puts @pfad
     @groesse = datei.size
     @pfad = File.expand_path @pfad
     TagLib::FileRef.open @pfad do |file|
