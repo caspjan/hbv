@@ -14,6 +14,8 @@ class Stats
   attr_accessor:db_size
   attr_accessor:avg_format_pro_hb
   attr_accessor:avg_hb_pro_format
+  attr_accessor:anz_formate
+  attr_accessor:anz_hb_pro_format
   
   def initialize
     @hb_ges = 0
@@ -31,5 +33,7 @@ class Stats
     @db_size = 0
     @avg_format_pro_hb = 0
     @avg_hb_pro_format = 0
+    @anz_formate = 0
+    @anz_hb_pro_format = Hash.new
   end
 end

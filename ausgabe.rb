@@ -76,6 +76,13 @@ class Ausgabe
 #   %sh -> Durchschnittliche Anzahl Sprecher pro Hörbuch
 #   %th -> Durchschnittliche Anzahl Tags pro Hörbuch
     
+    ff = ''
+    stats.anz_hb_pro_format.each_with_index {|e,i|
+      ff += e[0] + ': '
+      ff += e[1]
+      ff += ', ' if i < stats.anz_hb_pro_format.length-1
+    }
+    
     out = @stats_format.gsub "%n", "\n"
     out.gsub! "%tb", "\t"
     out.gsub! "%ha", stats.avg_hb_pro_autor
@@ -84,6 +91,8 @@ class Ausgabe
     out.gsub! "%db", calc_size(stats.db_size)
     out.gsub! "%hs", stats.avg_hb_pro_sprecher
     out.gsub! "%ht", stats.avg_hb_pro_tag
+    out.gsub! "%ff", ff
+    out.gsub! "%af", stats.anz_formate
     out.gsub! "%ah", stats.avg_autoren_pro_hb
     out.gsub! "%sh", stats.avg_sprecher_pro_hb
     out.gsub! "%th", stats.avg_tags_pro_hb
@@ -134,7 +143,6 @@ class Ausgabe
         if i < size.length-1
           formate += ', '
         end
-        
       }
     end
     

@@ -336,6 +336,17 @@ class DBCon
       stats.avg_hb_pro_format = e['avg_hb_f']
     }
     
+    #Anzahl der Formate
+    res = @con.query "SELECT COUNT(DISTINCT Format.format) as f FROM Format;"
+    res.each_hash {|e|
+      stats.anz_formate = e['f']
+    }
+    #Anzahl der Hörbücher pro Format
+    res = @con.query "SELECT COUNT(Format.Hoerbuch_idHoerbuch) as anz, Format.format FROM Format GROUP BY Format ORDER BY anz DESC LIMIT 3;"
+    res.each_hash {|e|
+      stats.anz_hb_pro_format[e['format']] = e['anz']
+    }
+    
     return stats
   end
   
