@@ -171,22 +171,6 @@ class DBCon
     return dateien
   end
   
-  #def get_dateien_komplett hb_id
-  #  dateien_tmp = Array.new
-  #  dateien = Hash.new
-  #  format_res = @con.query "SELECT Format.idFormat as id, Format.format as f FROM Format where Format.Hoerbuch_idHoerbuch = " + s(hb_id) + ";"
-  #  format_res.each_hash {|format|
-  #    #für jedes format die dateien holen
-  #    dateien_res = @con.query "SELECT D.pfad as pfad, D.nummer as nummer ,D.laenge as laenge ,D.groesse as groesse from Datei D, CD, Format F where F.idFormat = " + s(format['id']) + " and CD.Format_idFormat = F.idFormat and D.CD_idCD = CD.idCD"
-  #    dateien_res.each_hash {|d|
-  #      dateien_tmp << Datei.new(d['nummer'], d['pfad'], d['laenge'], d['groesse'])
-  #    }
-  #    dateien[format['f']] = dateien_tmp
-  #    dateien_tmp.clear
-  #  }
-  #  return dateien
-  #end
-  
   def get_format_id hb_id, format
     fid = nil
     res = @con.query "SELECT Format.idFormat as id from Format where Format.format = '" + s(format) + "' and Format.Hoerbuch_idHoerbuch = " + s(hb_id)
@@ -391,7 +375,7 @@ class DBCon
   end
   
   def update_titel hb_id, titel
-    @con.query "UPHoerbuchrbuch SET titel = '" + s(titel) + "' WHERE Hoerbuch.idHoerbuch = " + s(hb_id)
+    @con.query "UPDATE Hoerbuch SET titel = '" + s(titel) + "' WHERE Hoerbuch.idHoerbuch = " + s(hb_id)
   end
   
   def add_tag hb_id, tag
