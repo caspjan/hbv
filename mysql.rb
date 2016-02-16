@@ -53,15 +53,16 @@ class DBCon
   end
   
   def get_hb_laenge hb_id
-    res = @con.query 'SELECT sum(D.laenge) AS laenge FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id)
+    res = @con.query "SELECT SUM(D.laenge) AS laenge FROM Datei D,CD where D.CD_idCD = CD.idCD and CD.Format_idFormat = (SELECT Format.idFormat FROM Format where Format.Hoerbuch_idHoerbuch = " + s(hb_id) + " LIMIT 1);"
     res.each_hash {|e|
       return e['laenge']
     }
+    
   end
 
   def get_hb_size hb_id
     formate = Hash.new
-    res = @con.query 'SELECT sum(D.groesse) AS size, F.format as format FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id) + ' group by F.idFormat'
+    res = @con.query 'SELECT sum(D.groesse) AS size, F.format FROM Datei D,CD,Format F,Hoerbuch H where D.CD_idCD = CD.idCD and CD.Format_idFormat = F.idFormat and F.Hoerbuch_idHoerbuch = H.idHoerbuch and H.idHoerbuch = ' + s(hb_id) + ' group by F.idFormat'
     res.each_hash {|e|
       formate[e['format']] = e['size']
     }
