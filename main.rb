@@ -476,20 +476,20 @@ class Main
     end
   end
 end
-#begin
+begin
   Main.new
-#rescue Mysql::Error => e
+rescue Mysql::Error => e
   #connection refused
-#  if e.errno == 2002
-#    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
-#  #keine rechte
-#  elsif e.errno == 1044
-#    puts "Zugriff für User " + @einst.user + " verweigert"
-#  end
-#  #Datenbank nicht gefunden
-#  if e.error.start_with? "Unknown database"
-#    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
-#  end
-#  puts e
-#  exit 1
-#end
+  if e.errno == 2002
+    puts "Konnte nicht zum MySQL server verbinden. Sicher, dass er läuft?"
+  #keine rechte
+  elsif e.errno == 1044
+    puts "Zugriff für User " + @einst.user + " verweigert"
+  #Datenbank nicht gefunden
+  elsif e.error.start_with? "Unknown database"
+    puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
+  else
+    puts e
+  end
+  exit 1
+end

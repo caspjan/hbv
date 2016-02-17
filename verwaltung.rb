@@ -157,52 +157,10 @@ class Verwaltung
     }
     
   end
-  
-  #def datei_einfuegen datei
-  #  #schauen, ob es den interpreten schon gibt
-  #  if !@dbcon.gibt_wert? 'datei_interpret', 'interpret', datei.interpret
-  #    @dbcon.ins 'datei_interpret', 'interpret', datei.interpret
-  #  end
-  #  interpret_id = @dbcon.gibt_wert? 'datei_interpret', 'interpret', datei.interpret
-  #  
-  #  #schauen, ob es das genre schon gibt
-  #  if !@dbcon.gibt_wert? 'datei_genre', 'genre', datei.genre
-  #    @dbcon.ins 'datei_genre', 'genre', datei.genre
-  #  end
-  #  genre_id = @dbcon.gibt_wert? 'datei_genre', 'genre', datei.genre
-  #  
-  #  #schauen, ob es das Jahr schon gibt
-  #  if !@dbcon.gibt_wert? 'datei_jahr', 'jahr', datei.jahr
-  #    @dbcon.ins 'datei_jahr', 'jahr', datei.jahr
-  #  end
-  #  jahr_id = @dbcon.gibt_wert? 'datei_jahr', 'jahr', datei.jahr
-  #  
-  #  #schauen, ob es das album schon gibt
-  #  if !@dbcon.gibt_wert? 'datei_album', 'album', datei.album
-  #    @dbcon.ins 'datei_album', 'album', datei.album
-  #  end
-  #  album_id = @dbcon.gibt_wert? 'datei_album', 'album', datei.album
-  #  
-  #  #feste sachen einfuegen
-  #  @dbcon.ins_file datei.pfad.expand_path, datei.titel, datei.laenge, datei.groesse, datei.nummer, album_id, interpret_id, jahr_id, genre_id
-  #end
-  
+
   def hoerbuch_loeschen hb_id
     @dbcon.remove_hb hb_id
   end
-  
-  #def datei_loeschen id
-  #  #datei loeschen
-  #  @dbcon.remove_file id
-  #  #checken, ob es interpreten ohne datei gibt
-  #  @dbcon.clean_file_table 'datei_interpreten'
-  #  #checken, ob es alben ohne datei gibt
-  #  @dbcon.clean_file_table 'datei_album'
-  #  #checken, ob es genres ohne datei gibt
-  #  @dbcon.clean_file_table 'datei_genre'
-  #  #checken, ob es jahre ohne datei gibt
-  #  @dbcon.clean_file_table 'datei_jahr'
-  #end
 
   def get_hb_size hb_id
     return @dbcon.get_hb_size hb_id
@@ -248,67 +206,6 @@ class Verwaltung
       @dbcon.ins_format hb_id, format
     }
   end
-  
-  #def change hb_id, spalte, wert_neu, wert_alt
-  #  #hoerbuchtabelle aendern
-  #  if spalte.eql? 'titel' or spalte.eql? 'pfad'
-  #    #titel/pfad ändern
-  #    @dbcon.update 'titel', wert_neu, wert_alt
-  #    #neue id in hoerbuch tabelle schreiben
-  #    id = @dbcon.gibt_wert? spalte, spalte, wert_neu
-  #    @dbcon.update_hb spalte, hb_id, id
-  #    #beim pfad alle dateien neu einlesen
-  #    if spalte.eql? 'pfad'
-  #      #alle variablen vom alten hoerbuch holen, das alte löschen, und ein neues anlegen
-  #      hb = get_hb hb_id
-  #      hb.pfad = wert_neu
-  #      #altes löschen
-  #      hoerbuch_loeschen hb
-  #      #neues einfuegen
-  #      hoerbuch_einfuegen hb
-  #    end
-  #  elsif spalte.eql? 'autor' or spalte.eql? 'sprecher'
-  #    #schauen, ob es den neuen autor/sprecher gibt
-  #    tabelle = 'autoren' if spalte.eql? 'autor'
-  #    tabelle = 'sprechers' if spalte.eql? 'sprecher'
-  #    wert_neu.each_with_index {|neu,i|
-  #      id = @dbcon.gibt_wert? spalte, spalte, neu
-  #      #wenns die schon gibt
-  #      #puts id
-  #      if id
-  #        #verweis in zwischentabelle ändern
-  #        wert_alt.each {|e|  
-  #          id_alt = @dbcon.gibt_wert? spalte, spalte, e
-  #          #puts id_alt
-  #          @dbcon.update_zw tabelle, spalte, id, id_alt, hb_id
-  #        }
-  #      else
-  #        #autor/sprecher neu anlegen
-  #        #wert_neu.each_with_index {|neu,i|
-  #        @dbcon.ins spalte, spalte, neu
-  #        #verweis(e) in zwischentabelle ändern
-  #        id = @dbcon.gibt_wert? spalte, spalte, neu
-  #        #puts id
-  #        #id des alten wertes ermitteln
-  #        wert_alt.each {|g| 
-  #          res = @dbcon.get spalte, spalte, g
-  #          j = 0
-  #          res.each_hash {|alt|
-  #            if j == i
-  #              @dbcon.update_zw tabelle, spalte, id, alt['id'], hb_id
-  #            end
-  #            j += 1
-  #          }
-  #        }
-  #      end
-  #    }
-  #    #alten autor/sprecher löschen
-  #    @dbcon.clean_table 'autor'
-  #    @dbcon.clean_zw_table 'autor'
-  #    @dbcon.clean_table 'sprecher'
-  #    @dbcon.clean_zw_table 'sprecher'
-  #  end
-  #end
   
   def get_autoren
     @dbcon.get_autoren
