@@ -29,7 +29,7 @@ class Pfad_Parser
               e.entries.each {|f|
                 f = e.join f
                 @einst.datei_endungen.each {|g|
-                  if f.extname.eql? g
+                  if f.extname.casecmp(g) == 0
                     dateien_tmp << f
                   end
                 }

@@ -63,7 +63,7 @@ class Verwaltung
           gibt_cd = tmp = true if f.basename.to_s.include? "CD" or f.basename.to_s.include? "cd" or f.basename.to_s.include? "Cd" or f.basename.to_s.include? "cD"
           if tmp
             f.children.each {|g|
-              gibt_dateien = true if g.extname.eql?(e.basename.to_s.prepend("."))
+              gibt_dateien = true if (g.extname.casecmp(e.basename.to_s.prepend(".")) == 0)
               puts g
               puts g.extname
             }
