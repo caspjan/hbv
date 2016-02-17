@@ -332,7 +332,6 @@ class Main
           puts 'Neues Hoerbuch:'
           @ausg.aus hb_new, files?(hb.id), size?(hb.id), laenge?(hb.id)
           if sure?
-            #@verw.change id, 'sprecher', hb_new.sprecher, hb.sprecher
             @verw.update_sprecher id, hb_new.sprecher
           end
         else
