@@ -10,4 +10,13 @@ class Datei
     @laenge = laenge
     @groesse = groesse
   end
+  
+  def to_h
+    res = Hash.new
+    res[:nummer] = @nummer
+    res[:pfad] = @pfad
+    res[:laenge] = @laenge
+    res[:groesse] = @groesse
+    return res
+  end
 end

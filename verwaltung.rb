@@ -22,6 +22,10 @@ class Verwaltung
     @dbcon.get_format_id hb_id, format
   end
   
+  def get_formate hb_id
+    @dbcon.get_formate hb_id
+  end
+  
   def suche_bewertung bw
     @dbcon.suche_bewertung bw
   end

@@ -20,7 +20,7 @@ class Main
     o.string '-r', '--remove', '[id] remove audiobook from database'
     o.string '-id', '--get-id', '[id] get audiobook by id'
     o.bool '-fd', '--full-dump', 'print all Audiobooks in database'
-    o.string '--files', 'print all files of the audiobook with given format. Example: --files mp3'
+    o.bool '--files', 'print all files of the audiobook'
     o.bool '--init-db', 'create all needed tables'
     o.bool '--stats', 'print stats'
     o.string '-bd', '--basedir', 'temporarily change basedir'
@@ -69,15 +69,15 @@ class Main
     
     def files? hb_id
       if @args[:files]
-        @dateien = @verw.get_dateien(hb_id, @args[:files])
-        return @dateien
+        @formate = @verw.get_formate(hb_id)
+        return @formate
       else
         return nil
       end
     end
     
     def size? hb_id
-      if @einst.format.include? "%g"
+      if @einst.format.include? "%g" or @einst.format.eql? "JSON"
         return @verw.get_hb_size hb_id
       else
         return nil
@@ -85,7 +85,7 @@ class Main
     end
     
     def laenge? hb_id
-      if @einst.format.include? "%l"
+      if @einst.format.include? "%l" or @einst.format.eql? "JSON"
         return @verw.get_hb_laenge hb_id
       else
         return nil
@@ -490,6 +490,7 @@ rescue Mysql::Error => e
     puts "Konnte Datenbank nicht finden. Entweder manuell anlegen, oder mit --init-db versuchen."
   else
     puts e
+    puts e.backtrace.inspect
   end
   exit 1
 end

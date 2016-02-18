@@ -75,105 +75,118 @@ class Ausgabe
 #   %ah -> Durchschnittliche Anzahl Autoren pro Hörbuch
 #   %sh -> Durchschnittliche Anzahl Sprecher pro Hörbuch
 #   %th -> Durchschnittliche Anzahl Tags pro Hörbuch
-    
-    ff = ''
-    stats.anz_hb_pro_format.each_with_index {|e,i|
-      ff += e[0] + ': '
-      ff += e[1]
-      ff += ', ' if i < stats.anz_hb_pro_format.length-1
-    }
-    
-    out = @stats_format.gsub "%n", "\n"
-    out.gsub! "%tb", "\t"
-    out.gsub! "%ha", stats.avg_hb_pro_autor
-    out.gsub! "%hf", stats.avg_hb_pro_format
-    out.gsub! "%fh", stats.avg_format_pro_hb
-    out.gsub! "%db", calc_size(stats.db_size)
-    out.gsub! "%hs", stats.avg_hb_pro_sprecher
-    out.gsub! "%ht", stats.avg_hb_pro_tag
-    out.gsub! "%ff", ff
-    out.gsub! "%af", stats.anz_formate
-    out.gsub! "%ah", stats.avg_autoren_pro_hb
-    out.gsub! "%sh", stats.avg_sprecher_pro_hb
-    out.gsub! "%th", stats.avg_tags_pro_hb
-    out.gsub! "%h", stats.hb_ges
-    out.gsub! "%s", calc_size(stats.size_ges)
-    out.gsub! "%d", stats.dateien_ges.to_s
-    out.gsub! "%l", calc_laenge(stats.laenge_ges)
-    out.gsub! "%b", stats.bw_avg.to_s
-    out.gsub! "%t", stats.tags_ges
-    
+    if !@stats_format.eql? "JSON"
+      ff = ''
+      stats.anz_hb_pro_format.each_with_index {|e,i|
+        ff += e[0] + ': '
+        ff += e[1]
+        ff += ', ' if i < stats.anz_hb_pro_format.length-1
+      }
+      
+      out = @stats_format.gsub "%n", "\n"
+      out.gsub! "%tb", "\t"
+      out.gsub! "%ha", stats.avg_hb_pro_autor
+      out.gsub! "%hf", stats.avg_hb_pro_format
+      out.gsub! "%fh", stats.avg_format_pro_hb
+      out.gsub! "%db", calc_size(stats.db_size)
+      out.gsub! "%hs", stats.avg_hb_pro_sprecher
+      out.gsub! "%ht", stats.avg_hb_pro_tag
+      out.gsub! "%ff", ff
+      out.gsub! "%af", stats.anz_formate
+      out.gsub! "%ah", stats.avg_autoren_pro_hb
+      out.gsub! "%sh", stats.avg_sprecher_pro_hb
+      out.gsub! "%th", stats.avg_tags_pro_hb
+      out.gsub! "%h", stats.hb_ges
+      out.gsub! "%s", calc_size(stats.size_ges)
+      out.gsub! "%d", stats.dateien_ges.to_s
+      out.gsub! "%l", calc_laenge(stats.laenge_ges)
+      out.gsub! "%b", stats.bw_avg.to_s
+      out.gsub! "%t", stats.tags_ges
+    else
+      out = JSON.generate stats.to_h
+    end
     puts out
   end
   
-  def aus hb, dateien, size, laenge
-    out = @format.gsub "%n", "\n"
-
-    autoren = ""
-    anz_autoren = hb.autor.length
-    hb.autor.each_with_index {|e,i|
-      autoren << e
-      if i < anz_autoren-1
-        autoren << ', '
-      end
-      }
-   
-    sprecher = ""
-    anz_sprecher = hb.sprecher.length
-    hb.sprecher.each_with_index {|e,i|
-      sprecher << e
-      if i < anz_sprecher-1
-        sprecher << ', '
-      end
-    }
-    
-    tags = ""
-    anz_tags = hb.tags.length
-    hb.tags.each_with_index {|e,i|
-      tags << e
-      if i < anz_tags-1
-        tags << ', '
-      end
-    }
-    
-    formate = ''
-    if !size.nil?   
-      size.each_with_index {|e,i|
-        formate += e[0] + ': ' + calc_size(e[1])
-        if i < size.length-1
-          formate += ', '
+  def aus hb, formate, groesse, laenge
+    #wenn das format nicht json ist, wie in configfile zusammenbasteln
+    if !@format.eql? "JSON"
+      out = @format.gsub "%n", "\n"
+  
+      autoren = ""
+      anz_autoren = hb.autor.length
+      hb.autor.each_with_index {|e,i|
+        autoren << e
+        if i < anz_autoren-1
+          autoren << ', '
+        end
+        }
+     
+      sprecher = ""
+      anz_sprecher = hb.sprecher.length
+      hb.sprecher.each_with_index {|e,i|
+        sprecher << e
+        if i < anz_sprecher-1
+          sprecher << ', '
         end
       }
-    end
-    
-    out.gsub! "%tb", "\t"
-    out.gsub! "%id", hb.id.to_s
-    out.gsub! "%ta", tags
-    out.gsub! "%t", hb.titel
-    out.gsub! "%g", formate #calc_size(size) if !size.nil?
-    out.gsub! "%l", calc_laenge(laenge) if !laenge.nil?
-    out.gsub! "%s", sprecher
-    out.gsub! "%a", autoren
-    out.gsub! "%b", hb.bewertung.to_s
-    out.gsub! "%p", hb.pfad
-    
-    puts
-    puts out
-    if !dateien.nil?
-      puts "Dateien:"
-      dateien.each {|e|       
-        
-        d_out = @d_format.gsub "%n", "\n"
-        
-        #restliche variablen ersetzen
-        d_out.gsub! "%tb", "\t"
-        d_out.gsub! "%p", e.pfad
-        d_out.gsub! "%no", e.nummer
-        d_out.gsub! "%l", calc_laenge(e.laenge)
-        d_out.gsub! "%s", calc_size(e.groesse)
-        puts
-        puts d_out
-      } 
+      
+      tags = ""
+      anz_tags = hb.tags.length
+      hb.tags.each_with_index {|e,i|
+        tags << e
+        if i < anz_tags-1
+          tags << ', '
+        end
+      }
+      
+      formate = ''
+      if !size.nil?   
+        size.each_with_index {|e,i|
+          formate += e[0] + ': ' + calc_size(e[1])
+          if i < size.length-1
+            formate += ', '
+          end
+        }
+      end
+      
+      out.gsub! "%tb", "\t"
+      out.gsub! "%id", hb.id.to_s
+      out.gsub! "%ta", tags
+      out.gsub! "%t", hb.titel
+      out.gsub! "%g", formate #calc_size(size) if !size.nil?
+      out.gsub! "%l", calc_laenge(laenge) if !laenge.nil?
+      out.gsub! "%s", sprecher
+      out.gsub! "%a", autoren
+      out.gsub! "%b", hb.bewertung.to_s
+      out.gsub! "%p", hb.pfad
+      
+      puts
+      puts out
+      if !dateien.nil?
+        puts "Dateien:"
+        dateien.each {|e|       
+          
+          d_out = @d_format.gsub "%n", "\n"
+          
+          #restliche variablen ersetzen
+          d_out.gsub! "%tb", "\t"
+          d_out.gsub! "%p", e.pfad
+          d_out.gsub! "%no", e.nummer
+          d_out.gsub! "%l", calc_laenge(e.laenge)
+          d_out.gsub! "%s", calc_size(e.groesse)
+          puts
+          puts d_out
+        } 
+      end
+    else
+      #hörbuch als JSON String parsen
+      if !formate.nil?
+        hb.formate = formate
+      end
+      hb.laenge = laenge
+      hb.groesse = groesse
+      puts JSON.generate(hb.to_h)
     end
   end
   

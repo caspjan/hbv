@@ -1,6 +1,7 @@
 require 'slop'
 require 'mysql'
 require 'pathname'
+require 'json'
 require_relative 'verwaltung'
 require_relative 'ausgabe'
 require_relative 'einstellung_parser'

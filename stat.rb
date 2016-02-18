@@ -36,4 +36,26 @@ class Stats
     @anz_formate = 0
     @anz_hb_pro_format = Hash.new
   end
+  
+  def to_h
+    res = Hash.new
+    res[:hb_ges] = @hb_ges
+    res[:dateien_ges] = @dateien_ges
+    res[:size_ges] = @size_ges
+    res[:laenge_ges] = @laenge_ges
+    res[:bw_avg] = @bw_avg
+    res[:tags_ges] = @tags_ges
+    res[:avg_autoren_pro_hb] = @avg_autoren_pro_hb
+    res[:avg_sprecher_pro_hb] = @avg_sprecher_pro_hb
+    res[:avg_hb_pro_autor] = @avg_hb_pro_autor
+    res[:avg_hb_pro_sprecher] = @avg_hb_pro_sprecher
+    res[:avg_tags_pro_hb] = @avg_tags_pro_hb
+    res[:avg_hb_pro_tag] = @avg_hb_pro_tag
+    res[:db_size] = @db_size
+    res[:avg_format_pro_hb] = @avg_format_pro_hb
+    res[:avg_hb_pro_format] = @avg_hb_pro_format
+    res[:anz_formate] = @anz_formate
+    res[:anz_hb_pro_format] = @anz_hb_pro_format
+    return res
+  end
 end

@@ -40,10 +40,10 @@ class DBCon
     res = @con.query "SELECT Hoerbuch.idHoerbuch as id,Hoerbuch.titel as titel,Hoerbuch.pfad as pfad,Hoerbuch.bewertung as bw from Hoerbuch where Hoerbuch.idHoerbuch = " + s(hb_id)
 
     res.each_hash {|e|
-      hb.titel = e['titel']
-      hb.id = e['id']
-      hb.pfad = e['pfad']
-      hb.bewertung = e['bw']
+      hb.titel = s(e['titel'])
+      hb.id = s(e['id'])
+      hb.pfad = s(e['pfad'])
+      hb.bewertung = s(e['bw'])
     }
     if hb.id.eql? 0
       return nil
@@ -180,29 +180,48 @@ class DBCon
     return fid
   end
   
-  def get_interpret interpret_id
-    @con.query 'SELECT * FROM datei_interpret WHERE id=' + s(interpret_id) + ';'
+  def get_formate hb_id
+    formate = Array.new
+    #ids der Formate bestimmen
+    res = @con.query "SELECT Format.idFormat as id,Format.format FROM Format where Format.Hoerbuch_idHoerbuch = " + s(hb_id) + ";"
+    res.each_hash {|format|
+      format_tmp = Format.new format['format']
+      res_cd = @con.query "SELECT CD.idCD as id,CD.nummer,CD.pfad FROM CD where CD.Format_idFormat = " + s(format['id']) + ";"
+      res_cd.each_hash {|cd|
+        dateien_tmp = Array.new
+        dateien_res = @con.query "SELECT D.pfad, D.nummer, D.groesse, D.laenge FROM Datei D where D.CD_idCD = " + s(cd['id']) + ";"
+        dateien_res.each_hash {|datei|
+          dateien_tmp << Datei.new(s(datei['nummer']),s(datei['pfad']),s(datei['laenge']),s(datei['groesse']))
+        }
+        format_tmp.add_cd CD.new s(cd['id']), s(cd['nummer']), s(hb_id), s(cd['pfad']), s(format['format']), dateien_tmp
+      }
+      formate << format_tmp
+    }
+    return formate
   end
+  #def get_interpret interpret_id
+  #  @con.query 'SELECT * FROM datei_interpret WHERE id=' + s(interpret_id) + ';'
+  #end
   
-  def get_album album_id
-    @con.query 'SELECT * FROM datei_album WHERE id=' + s(album_id) + ';'
-  end
+  #def get_album album_id
+  #  @con.query 'SELECT * FROM datei_album WHERE id=' + s(album_id) + ';'
+  #end
+  #
+  #def get_jahr year_id
+  #  @con.query 'SELECT * FROM datei_jahr WHERE id=' + s(year_id) + ';'
+  #end
+  #
+  #def get_genre genre_id
+  #  @con.query 'SELECT * FROM datei_genre WHERE id=' + s(genre_id) + ';'
+  #end
+  #
+  #def get_bewertung bw
+  #  @con.query 'SELECT * FROM bewertung WHERE bewertung=' + s(bw) + ';'
+  #end
   
-  def get_jahr year_id
-    @con.query 'SELECT * FROM datei_jahr WHERE id=' + s(year_id) + ';'
-  end
-  
-  def get_genre genre_id
-    @con.query 'SELECT * FROM datei_genre WHERE id=' + s(genre_id) + ';'
-  end
-  
-  def get_bewertung bw
-    @con.query 'SELECT * FROM bewertung WHERE bewertung=' + s(bw) + ';'
-  end
-  
-  def get_hb_bw_id bw_id
-    @con.query 'SELECT * FROM hoerbuecher WHERE bewertung=' + s(bw_id) + ';'
-  end
+  #def get_hb_bw_id bw_id
+  #  @con.query 'SELECT * FROM hoerbuecher WHERE bewertung=' + s(bw_id) + ';'
+  #end
   
   def calc_next_id table
     res = @con.query 'SHOW TABLE STATUS FROM ' + s(@einst.db) + ' WHERE Name="' + s(table) + '";'
@@ -411,17 +430,17 @@ class DBCon
     @con.query 'DELETE FROM Tag WHERE idTag NOT IN (SELECT Tag_has_Hoerbuch.Tag_idTag FROM Tag_has_Hoerbuch)'
   end
   
-  def remove_file file_id
-    @con.query 'DELETE FROM datei WHERE id=' + s(file_id) + ';'
-  end
+  #def remove_file file_id
+  #  @con.query 'DELETE FROM datei WHERE id=' + s(file_id) + ';'
+  #end
   
-  def remove_path path_id
-    @con.query 'DELETE FROM pfad WHERE id=' + s(path_id) + ';'
-  end
+  #def remove_path path_id
+  #  @con.query 'DELETE FROM pfad WHERE id=' + s(path_id) + ';'
+  #end
   
-  def remove_title title
-    @con.query 'DELETE FROM titel WHERE id=' + s(title) + ';'
-  end
+  #def remove_title title
+  #  @con.query 'DELETE FROM titel WHERE id=' + s(title) + ';'
+  #end
   
   def remove_zw_hb hb_id, table
     @con.query 'DELETE FROM ' + table + ' WHERE hoerbuch=' + s(hb_id) + ';'
@@ -492,10 +511,10 @@ class DBCon
     @con.query 'UPDATE hoerbuecher SET ' + s(col) + '=' + s(val_new) + ' WHERE id=' + s(hb_id) + ";"
   end
   
-  def update_zw table, col, val_new, val_old, hb_id
-    #puts 'UPDATE ' + s(table) + ' SET ' + s(col) + "='" + s(val_new) + "' WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
-    @con.query 'UPDATE ' + s(table) + ' SET ' + s(col) + "=" + s(val_new) + " WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
-  end
+  #def update_zw table, col, val_new, val_old, hb_id
+  #  #puts 'UPDATE ' + s(table) + ' SET ' + s(col) + "='" + s(val_new) + "' WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
+  #  @con.query 'UPDATE ' + s(table) + ' SET ' + s(col) + "=" + s(val_new) + " WHERE hoerbuch=" + s(hb_id) + " AND " + s(col) + "=" + s(val_old) + ';'
+  #end
   
   def ins table, col, val
     pst = @con.prepare 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(?)'
@@ -503,15 +522,15 @@ class DBCon
     #puts 'INSERT INTO ' + s(table) + '(' + s(col) + ') VALUES(' + s(val) + ')'
   end
   
-  def ins_zw table, col1, col2, val1, val2
-    #wird benutzt, um Autoren/Sprecher in die zwischentabelle zu schreiben
-    #val2 ist das array mit den Autoren/Sprechern drin
-    pst = @con.prepare 'INSERT INTO ' + s(table) + '(' + s(col1) + ',' + s(col2) + ') VALUES(?, ?)'
-    val2.each {|e|
-      #puts 'INSERT INTO ' + s(table) + '(' + s(col1) + ',' + s(col2) + ') VALUES(' + s(val1) + ',' + s(e) + ')'
-      pst.execute val1, e
-    }
-  end
+  #def ins_zw table, col1, col2, val1, val2
+  #  #wird benutzt, um Autoren/Sprecher in die zwischentabelle zu schreiben
+  #  #val2 ist das array mit den Autoren/Sprechern drin
+  #  pst = @con.prepare 'INSERT INTO ' + s(table) + '(' + s(col1) + ',' + s(col2) + ') VALUES(?, ?)'
+  #  val2.each {|e|
+  #    #puts 'INSERT INTO ' + s(table) + '(' + s(col1) + ',' + s(col2) + ') VALUES(' + s(val1) + ',' + s(e) + ')'
+  #    pst.execute val1, e
+  #  }
+  #end
   
   def get table, col, val
     @con.query 'SELECT * FROM ' + s(table) + ' WHERE ' + s(col) + '="' + s(val) + '";'
@@ -527,15 +546,15 @@ class DBCon
     return hb_id.to_i
   end
   
-  def ins_file path, title, length, size, number, album, interpret, year, genre
-    pst = @con.prepare 'INSERT INTO datei(pfad, titel, laenge, groesse, nummer, album, interpret, jahr, genre) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    pst.execute s(path), s(title), i(length), i(size), i(number), i(album), i(interpret), i(year), i(genre)
-  end
-  
-  def ins_file_zw hb_id, file_id
-    pst = @con.prepare 'INSERT INTO dateien(hoerbuch, datei) VALUES(?, ?)'
-    pst.execute file_id, hb_id
-  end
+  #def ins_file path, title, length, size, number, album, interpret, year, genre
+  #  pst = @con.prepare 'INSERT INTO datei(pfad, titel, laenge, groesse, nummer, album, interpret, jahr, genre) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  #  pst.execute s(path), s(title), i(length), i(size), i(number), i(album), i(interpret), i(year), i(genre)
+  #end
+  #
+  #def ins_file_zw hb_id, file_id
+  #  pst = @con.prepare 'INSERT INTO dateien(hoerbuch, datei) VALUES(?, ?)'
+  #  pst.execute file_id, hb_id
+  #end
   
   def up_pos hb_id, pos
     @con.query 'UPDATE Hoerbuch SET position=' + s(pos) + ' WHERE idHoerbuch = ' + s(hb_id) + ';'
